@@ -9,7 +9,7 @@ readInstance(Path, Bytes) :-
     catch(
         (get_byte(Stream, Byte), readBytes(Stream, Byte, FileBytes), close(Stream)),
         Cause,
-        (close(Stream), throw(instanceReadError(Path, Cause)))
+        (close(Stream, [force(true)]), throw(instanceReadError(Path, Cause)))
     ),
     Bytes = FileBytes.
 
