@@ -1,4 +1,4 @@
-%% A relationship between execution arguments and their configuration
+%% A relationship between program arguments and their configuration
 
 parseArguments([Input, _, _|_], _) :-
     \+ atom(Input), !,
@@ -32,7 +32,7 @@ parseArguments([Input, Output, Strategy|Options], Config) :-
 parseArguments(Arguments, _) :-
     throw(argumentError(Arguments, "Expected input path, output path and strategy")).
 
-%% A relationship between execution options and configuration fields
+%% A relationship between program options and configuration fields
 
 parseOptions([], Config, Config).
 
@@ -79,7 +79,7 @@ parseOptions([Option|Options], config(Input, Output, Strategy, Heuristic, Optimi
 parseOptions([Option|_], _, _) :-
     throw(argumentError(Option, "Unknown execution option")).
 
-%% A relationship between decimal text and a search limit
+%% A relationship between number text and a search limit
 
 parseLimit(Text, Limit) :-
     atom(Text), atom_codes(Text, Codes), Codes = [_|_],
@@ -88,7 +88,7 @@ parseLimit(Text, Limit) :-
 parseLimit(Text, _) :-
     throw(argumentError(Text, "Expected a nonnegative decimal integer")).
 
-%% A relationship between decimal digits and their accumulated value
+%% A relationship between digits and the number they form
 
 parseLimitDigits([], Limit, Limit).
 

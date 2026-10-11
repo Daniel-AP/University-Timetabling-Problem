@@ -12,7 +12,7 @@ checkSchedule(Schedule) :-
     findall([Teacher, MaxSlots], teacher(Teacher, _, MaxSlots, _), Teachers),
     checkTeachers(Teachers, Schedule).
 
-%% A relationship between assignments and their individual validity
+%% A relationship between assignments and their validity
 
 checkAssignments([]).
 
@@ -20,7 +20,7 @@ checkAssignments([Assignment|Assignments]) :-
     checkAssignment(Assignment),
     checkAssignments(Assignments).
 
-%% A relationship between an assignment and its individual restrictions
+%% A relationship between an assignment and its rules
 
 checkAssignment(assignment(Course, Group, Professors, Room, Day, Start, Duration)) :-
     group(Course, Group, _, Enrolled, _, Duration, Requirement),
@@ -45,7 +45,7 @@ checkAssignment(assignment(Course, Group, Professors, Room, Day, Start, Duration
     groupAvailable(Availabilities, Day, Start),
     allowedSlot(Course, Group, slot(Room, Day, Start)).
 
-%% A relationship between group requirements and their exact session counts
+%% A relationship between groups and their required session counts
 
 checkGroups([], _).
 
@@ -58,7 +58,7 @@ checkGroups([[Course, Group, WeeklySessions]|Groups], Schedule) :-
     length(Matches, WeeklySessions),
     checkGroups(Groups, Schedule).
 
-%% A relationship between distinct session pairs and their lack of conflicts
+%% A relationship between assignments and their lack of conflicts
 
 checkPairs([]).
 
@@ -97,7 +97,7 @@ assignmentConflict(First, Second) :-
     exclusiveGroups(OtherCourse, OtherGroup, Course, Group),
     assignmentOverlap(First, Second).
 
-%% A relationship between two assignments and their positive occupied overlap
+%% A relationship between two assignments and their shared time
 
 assignmentOverlap(assignment(_, _, _, _, Day, Start, Duration),
         assignment(_, _, _, _, Day, OtherStart, OtherDuration)) :-
@@ -106,7 +106,7 @@ assignmentOverlap(assignment(_, _, _, _, Day, Start, Duration),
     OtherEnd is OtherStart+OtherDuration,
     Start < OtherEnd, OtherStart < End.
 
-%% A relationship between teachers and their respected weekly limits
+%% A relationship between teachers and their weekly limits
 
 checkTeachers([], _).
 
@@ -115,13 +115,13 @@ checkTeachers([[Teacher, MaxSlots]|Teachers], Schedule) :-
     Load =< MaxSlots,
     checkTeachers(Teachers, Schedule).
 
-%% A relationship between a group and its distinct registered teachers
+%% A relationship between a group and its teachers without duplicates
 
 groupTeachers(Course, Group, Teachers) :-
     findall(Teacher, teaches(Course, Group, Teacher), RepeatedTeachers),
     sort(RepeatedTeachers, Teachers).
 
-%% A relationship between a teacher and the load of physical sessions
+%% A relationship between a teacher and their weekly slot count
 
 teacherLoad(_, [], 0).
 

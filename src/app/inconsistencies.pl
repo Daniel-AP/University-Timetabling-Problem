@@ -1,4 +1,4 @@
-%% A relationship between instance facts and their demonstrated inconsistencies
+%% A relationship between instance facts and errors that prevent a solution
 
 instanceInconsistencies(Errors) :-
     findall(
@@ -24,7 +24,7 @@ instanceInconsistencies(Errors) :-
     ),
     append(GroupErrors, TeacherErrors, Errors).
 
-%% A relationship between a group and a demonstrated impossibility
+%% A relationship between a group and an error that prevents a solution
 
 groupInconsistency(Course, Group, Message) :-
     group(Course, Group, _, Enrolled, WeeklySessions, _, Requirement),
@@ -64,14 +64,14 @@ groupInconsistency(Course, Group, Message) :-
     append(Message5, " exceed temporal capacity ", Message6),
     append(Message6, MaxDigits, Message).
 
-%% A relationship between a group requirement and the existence of a suitable room
+%% A relationship between group requirements and a suitable room
 
 groupHasRoom(Enrolled, Requirement) :-
     room(_, Capacity, Type),
     Capacity >= Enrolled,
     roomTypeCompatible(Requirement, Type), !.
 
-%% A relationship between a group and its individually permitted locations
+%% A relationship between a group and its allowed locations
 
 groupSlots(Course, Group, Slots) :-
     group(Course, Group, _, _, _, _, _),
@@ -85,7 +85,7 @@ groupSlots(Course, Group, Slots) :-
         Slots
     ).
 
-%% A relationship between sorted distinct starts and their maximum count of positive-duration sessions
+%% A relationship between session starts and the maximum number of sessions that fit
 
 groupMaxSessions([], _, 0).
 
@@ -102,7 +102,7 @@ groupMaxSessions([daySlot(Day, Start)|Times], Duration, MaxSessions) :-
     groupMaxSessions(RemainingTimes, Duration, RestMax),
     MaxSessions is RestMax+1.
 
-%% A relationship between a teacher and a demonstrated impossibility
+%% A relationship between a teacher and an error that prevents a solution
 
 teacherInconsistency(Teacher, Groups, Message) :-
     teacher(Teacher, _, MaxSlots, _),
@@ -128,7 +128,7 @@ teacherInconsistency(Teacher, Groups, Message) :-
     append(Message3, " exceed possible coverage ", Message4),
     append(Message4, CoverageDigits, Message).
 
-%% A relationship between a teacher and the existence of a teaching declaration
+%% A relationship between a teacher and a group they teach
 
 teacherHasGroup(Teacher, Course, Group) :-
     teaches(Course, Group, Teacher), !.
@@ -151,7 +151,7 @@ teacherDemand(Teacher, [[Course, Group, WeeklySessions, Duration]|Groups], Deman
     teacherDemand(Teacher, Groups, RestDemand),
     Demand is WeeklySessions*Duration+RestDemand.
 
-%% A relationship between a teacher's possible occupied slots and their upper bound
+%% A relationship between a teacher and their possible slot count
 
 teacherMaxCoverage(Teacher, Groups, Coverage) :-
     findall(

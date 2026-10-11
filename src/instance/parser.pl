@@ -1,10 +1,10 @@
-%% A relationship between file bytes and a complete instance
+%% A relationship between file bytes and an instance
 
 parseInstance(Bytes, Instance) :-
     parseLines(Bytes, 1, none, [], ParsedInstance),
     Instance = ParsedInstance.
 
-%% A relationship between remaining lines and their grouped records
+%% A relationship between file lines and their records
 
 parseLines([], _, _, _, instance([], [], [], [], [], [])).
 
@@ -50,7 +50,7 @@ parseLine(LineBytes, Line, Section, record(Line, Values)) :-
     trimFields(Fields, TrimmedFields),
     parseRecord(Section, TrimmedFields, Line, Values).
 
-%% A relationship between an entry and the remaining instance
+%% A relationship between an entry and the instance it belongs to
 
 parseEntry(skip, Bytes, Line, Section, SeenSections, Instance) :-
     parseLines(Bytes, Line, Section, SeenSections, Instance).

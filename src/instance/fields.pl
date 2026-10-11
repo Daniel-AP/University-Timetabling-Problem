@@ -9,7 +9,7 @@ splitBytes([Separator|Bytes], Separator, [[]|Parts]) :-
 splitBytes([Byte|Bytes], Separator, [[Byte|Part]|Parts]) :-
     splitBytes(Bytes, Separator, [Part|Parts]).
 
-%% A relationship between fields and their trimmed bytes
+%% A relationship between fields and their text without outer spaces
 
 trimFields([], []).
 
@@ -33,12 +33,12 @@ removeLeadingSpaces([32|Bytes], RemainingBytes) :-
 
 removeLeadingSpaces(Bytes, Bytes).
 
-%% A relationship between decimal bytes and a nonnegative integer
+%% A relationship between number text and its integer value
 
 parseNumber([Byte|Bytes], Number) :-
     parseNumberDigits([Byte|Bytes], 0, Number).
 
-%% A relationship between decimal digits and their accumulated value
+%% A relationship between digits and the number they form
 
 parseNumberDigits([], Number, Number).
 
@@ -47,7 +47,7 @@ parseNumberDigits([Byte|Bytes], Accum, Number) :-
     NextAccum is Accum*10+Byte-48,
     parseNumberDigits(Bytes, NextAccum, Number).
 
-%% A relationship between comma-separated characters and their bytes
+%% A relationship between day text and its list of days
 
 parseDays(Bytes, [Day]) :-
     takeCharacter(Bytes, Day, []),
@@ -58,7 +58,7 @@ parseDays(Bytes, [Day|Days]) :-
     Day \= ",",
     parseDays([NextByte|RemainingBytes], Days).
 
-%% A relationship between bytes, a complete UTF-8 character and the rest
+%% A relationship between bytes, their first UTF-8 character and the remaining bytes
 
 takeCharacter([Byte|Bytes], [Byte], Bytes) :-
     Byte >= 0, Byte =< 127.
@@ -96,7 +96,7 @@ takeCharacter([244, Second, Third, Fourth|Bytes], [244, Second, Third, Fourth], 
     Third >= 128, Third =< 191,
     Fourth >= 128, Fourth =< 191.
 
-%% A relationship between time bytes and their hour and minute
+%% A relationship between time text and its hour and minute
 
 parseTime([HourTens, HourUnits, 58, MinuteTens, MinuteUnits], startTime(Hour, Minute)) :-
     parseNumber([HourTens, HourUnits], Hour),
@@ -108,7 +108,7 @@ parseDaySlot(Bytes, daySlot(Day, Slot)) :-
     takeCharacter(Bytes, Day, SlotBytes),
     parseNumber(SlotBytes, Slot).
 
-%% A relationship between availability bytes and their ranges
+%% A relationship between availability text and its time ranges
 
 parseAvailability([], all) :- !.
 
@@ -116,7 +116,7 @@ parseAvailability(Bytes, Ranges) :-
     splitBytes(Bytes, 44, RangeFields),
     parseRanges(RangeFields, Ranges).
 
-%% A relationship between range fields and their endpoints
+%% A relationship between range fields and their start and end
 
 parseRanges([], []).
 

@@ -1,4 +1,4 @@
-%% A relationship between a session, its number of students and its length
+%% A relationship between a session, its student count and its length
 
 demandData(session(Course, Group, _), Enrolled, Duration) :-
     group(Course, Group, _, Enrolled, _, Duration, _).
@@ -15,7 +15,7 @@ greaterDemand(First, Second) :-
     demandData(Second, Enrolled, OtherDuration),
     Duration > OtherDuration.
 
-%% A relationship between a session, pending sessions and its degree
+%% A relationship between a session and its rule count with pending sessions
 
 degree(_, [], 0).
 

@@ -1,4 +1,4 @@
-%% A relationship between instance facts and their required sessions
+%% A relationship between instance facts and their sessions
 
 sessions(Sessions) :-
     findall([Course, Group, WeeklySessions], group(Course, Group, _, _, WeeklySessions, _, _), Groups),
@@ -13,7 +13,7 @@ buildSessions([[Course, Group, WeeklySessions]|Groups], Sessions) :-
     buildSessions(Groups, RestSessions),
     append(CurrentSessions, RestSessions, Sessions).
 
-%% A relationship between a group, its weekly ordinals and their sessions
+%% A relationship between a group, its session numbers and its sessions
 
 groupSessions(_, _, Ordinal, WeeklySessions, []) :-
     Ordinal > WeeklySessions.
@@ -24,7 +24,7 @@ groupSessions(Course, Group, Ordinal, WeeklySessions,
     NextOrdinal is Ordinal+1,
     groupSessions(Course, Group, NextOrdinal, WeeklySessions, Sessions).
 
-%% A relationship between sessions and their base domains
+%% A relationship between sessions and their possible locations
 
 sessionDomains([], []).
 
@@ -32,12 +32,12 @@ sessionDomains([Session|Sessions], [domain(Session, Slots)|Domains]) :-
     sessionDomain(Session, Slots),
     sessionDomains(Sessions, Domains).
 
-%% A relationship between a session and its individual locations
+%% A relationship between a session and its possible locations
 
 sessionDomain(Session, Slots) :-
     findall(Slot, possibleSlot(Session, Slot), Slots).
 
-%% A relationship between a session and an individual location it can use
+%% A relationship between a session and a location it can use
 
 possibleSlot(session(Course, Group, _), slot(Room, Day, Start)) :-
     group(Course, Group, _, Enrolled, _, Duration, Requirement),
@@ -57,7 +57,7 @@ possibleSlot(session(Course, Group, _), slot(Room, Day, Start)) :-
     Start =< Slots,
     groupAvailable(Availabilities, Day, Start).
 
-%% A relationship between inclusive bounds and their ascending integers
+%% A relationship between a number range and its numbers in order
 
 startBetween(Current, Last, Current) :-
     Current =< Last.
@@ -79,7 +79,7 @@ roomTypeCompatible("laboratorio", "mixta").
 
 roomTypeCompatible("mixta", _).
 
-%% A relationship between all group teachers and an available start
+%% A relationship between group teachers and a start they can all use
 
 groupAvailable([], _, _).
 
@@ -87,7 +87,7 @@ groupAvailable([Availability|Availabilities], Day, Start) :-
     availableStart(Availability, Day, Start),
     groupAvailable(Availabilities, Day, Start).
 
-%% A relationship between availability and a concrete session start
+%% A relationship between availability and a session start
 
 availableStart(all, _, _).
 

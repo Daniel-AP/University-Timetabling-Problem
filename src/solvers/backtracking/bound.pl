@@ -1,4 +1,4 @@
-%% A relationship between a branch and its cost lower bound
+%% A relationship between a branch and a lower bound on its cost
 
 lowerBound(btState(PendingSessions, AssignedSessions), Bound) :-
     findall(
@@ -31,7 +31,7 @@ lowerBound(btState(PendingSessions, AssignedSessions), Bound) :-
     costSum(CompactCosts, CompactTotal),
     Bound is PreferenceTotal+CompactTotal.
 
-%% A relationship between a complete group and the pending sessions
+%% A relationship between a group and the absence of its pending sessions
 
 completeGroup(Course, Group, PendingSessions) :-
     \+ member(session(Course, Group, _), PendingSessions).

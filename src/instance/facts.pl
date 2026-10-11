@@ -9,7 +9,7 @@
 :- dynamic(preferredSlot/5).
 :- dynamic(compactGroup/3).
 
-%% A relationship between a validated instance and its registered facts
+%% A relationship between an instance and its facts
 
 registerInstance(instance(Settings, Rooms, Teachers, Groups, Teaching, Restrictions)) :-
     clearInstance,
@@ -20,7 +20,7 @@ registerInstance(instance(Settings, Rooms, Teachers, Groups, Teaching, Restricti
     registerRecords(teaching, Teaching),
     registerRecords(restrictions, Restrictions).
 
-%% Remove the facts of the current instance
+%% A relationship between instance facts and their removal
 
 clearInstance :-
     retractall(instanceSetting(_, _)),
@@ -34,7 +34,7 @@ clearInstance :-
     retractall(preferredSlot(_, _, _, _, _)),
     retractall(compactGroup(_, _, _)).
 
-%% A relationship between section records and their registered facts
+%% A relationship between section records and their facts
 
 registerRecords(_, []).
 
@@ -42,7 +42,7 @@ registerRecords(Section, [Record|Records]) :-
     registerRecord(Section, Record),
     registerRecords(Section, Records).
 
-%% A relationship between a record and its registered fact
+%% A relationship between a record and its fact
 
 registerRecord(config, record(_, [Key, Value])) :-
     assertz(instanceSetting(Key, Value)).

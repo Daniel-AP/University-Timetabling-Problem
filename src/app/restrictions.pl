@@ -1,4 +1,4 @@
-%% A relationship between a group and a slot respecting its fixed room and forbidden times
+%% A relationship between a group and a location allowed by its rules
 
 allowedSlot(Course, Group, slot(Room, Day, Start)) :-
     group(Course, Group, _, _, _, Duration, _),

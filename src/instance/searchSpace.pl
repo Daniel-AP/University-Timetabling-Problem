@@ -1,4 +1,4 @@
-%% A relationship between instance facts and their approximate search space size
+%% A relationship between instance facts and an estimate of the search size
 
 searchSpaceSize(Size) :-
     findall(Code, room(Code, _, _), Rooms),
@@ -10,7 +10,7 @@ searchSpaceSize(Size) :-
         group(_, _, _, _, WeeklySessions, Duration, _), Groups),
     searchSpaceProduct(Groups, RoomCount, DayCount, Slots, Size).
 
-%% A relationship between group requirements and their product of choices
+%% A relationship between group requirements and the number of possible schedules
 
 searchSpaceProduct([], _, _, _, 1.0).
 

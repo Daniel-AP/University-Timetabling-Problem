@@ -1,10 +1,10 @@
-%% Find groups of equivalent rooms that are not fixed
+%% A relationship between instance rooms and their equivalent groups
 
 equivalentRoomGroups(Groups) :-
     findall(room(Room, Capacity, Type), (room(Room, Capacity, Type), \+ fixedRoom(_, _, Room)), Rooms),
     buildRoomGroups(Rooms, Groups).
 
-%% Build groups of at least two rooms with equal capacity and type
+%% A relationship between rooms and groups with the same capacity and type
 
 buildRoomGroups([], []).
 
@@ -16,7 +16,7 @@ buildRoomGroups([Reference|Rooms], Groups) :-
     splitEquivalentRooms(Reference, Rooms, [], Remaining),
     buildRoomGroups(Remaining, Groups).
 
-%% Split rooms by the reference capacity and type
+%% A relationship between a room, matching rooms and the remaining rooms
 
 splitEquivalentRooms(_, [], [], []).
 

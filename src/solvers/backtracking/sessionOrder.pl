@@ -1,4 +1,4 @@
-%% Check a candidate session against the assigned session order
+%% A relationship between a candidate session and the order of assigned sessions
 
 checkSessionOrder(_, _, []).
 
@@ -6,7 +6,7 @@ checkSessionOrder(Session, Slot, [tentativeAssignment(OtherSession, OtherSlot)|A
     checkPairOrder(Session, Slot, OtherSession, OtherSlot),
     checkSessionOrder(Session, Slot, AssignedSessions).
 
-%% Check that session ordinals follow their time order
+%% A relationship between session numbers and their time order
 
 checkPairOrder(session(Course, _, _), _, session(OtherCourse, _, _), _) :-
     Course \= OtherCourse.
@@ -22,7 +22,7 @@ checkPairOrder(session(Course, Group, Ordinal), Slot, session(Course, Group, Oth
     Ordinal > OtherOrdinal,
     slotBefore(OtherSlot, Slot).
 
-%% Check that the first location starts before the second
+%% A relationship between an earlier location and a later location
 
 slotBefore(slot(_, Day, Start), slot(_, Day, OtherStart)) :-
     Start < OtherStart.

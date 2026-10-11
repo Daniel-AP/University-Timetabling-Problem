@@ -1,4 +1,4 @@
-%% Start the CPU and wall time measurements
+%% A relationship between a run and the start of its time measurements
 
 startMeasure :-
     statistics(real_time, _),
@@ -12,7 +12,7 @@ finishMeasure(Nodes, Backtracks, searchStats(Nodes, Backtracks, CpuTime, TotalTi
     CpuTime is CpuMilliseconds/1000.0,
     TotalTime is WallMilliseconds/1000.0.
 
-%% A relationship between search statistics and the search rate
+%% A relationship between search statistics and the number of nodes per second
 
 nodeRate(searchStats(Nodes, _, CpuTime, _), Rate) :-
     Rate is Nodes/CpuTime.

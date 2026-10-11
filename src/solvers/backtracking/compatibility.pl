@@ -1,4 +1,4 @@
-%% A relationship between a candidate location and its compatibility with a branch
+%% A relationship between a location and the assignments it can join
 
 compatibleAssignment(Session, Slot, AssignedSessions) :-
     Session = session(Course, Group, _),
@@ -21,13 +21,13 @@ compatibleAssignment(Session, Slot, AssignedSessions) :-
     ),
     checkTeachers(Limits, [Assignment|Assignments]).
 
-%% A relationship between a session location and its common assignment representation
+%% A relationship between a session location and its schedule assignment
 
 sessionAssignment(session(Course, Group, _), slot(Room, Day, Start), assignment(Course, Group, Teachers, Room, Day, Start, Duration)) :-
     group(Course, Group, _, _, _, Duration, _),
     groupTeachers(Course, Group, Teachers).
 
-%% A relationship between a session domain and its compatible branch locations
+%% A relationship between a session domain and its compatible locations
 
 compatibleSlots(_, [], _, []).
 

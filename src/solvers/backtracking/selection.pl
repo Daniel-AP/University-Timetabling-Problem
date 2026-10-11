@@ -1,4 +1,4 @@
-%% A relationship between a heuristic, a branch and its next session
+%% A relationship between a heuristic, pending sessions and the next session
 
 selectSession(original, [Session|_], _, _, Session).
 
@@ -18,7 +18,7 @@ selectSession(degree, [Session|Sessions], _, _, SelectedSession) :-
 selectSession(demand, [Session|Sessions], _, _, SelectedSession) :-
     selectDemand(Sessions, Session, SelectedSession).
 
-%% A relationship between remaining sessions and the one with fewer compatible locations
+%% A relationship between sessions and the one with the fewest compatible locations
 
 selectMrv([], _, _, BestSession, _, BestSession).
 
@@ -32,7 +32,7 @@ selectMrv([Session|Sessions], Domains, AssignedSessions, _, BestCount, SelectedS
 selectMrv([_|Sessions], Domains, AssignedSessions, BestSession, BestCount, SelectedSession) :-
     selectMrv(Sessions, Domains, AssignedSessions, BestSession, BestCount, SelectedSession).
 
-%% A relationship between remaining sessions and the one with greater degree
+%% A relationship between sessions and the one with the most shared rules
 
 selectDegree([], _, BestSession, _, BestSession).
 
@@ -44,7 +44,7 @@ selectDegree([Session|Sessions], PendingSessions, _, BestDegree, SelectedSession
 selectDegree([_|Sessions], PendingSessions, BestSession, BestDegree, SelectedSession) :-
     selectDegree(Sessions, PendingSessions, BestSession, BestDegree, SelectedSession).
 
-%% A relationship between remaining sessions and the one with greater demand
+%% A relationship between sessions and the one with the greatest demand
 
 selectDemand([], BestSession, BestSession).
 

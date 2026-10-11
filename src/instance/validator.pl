@@ -14,7 +14,7 @@ validateInstance(Instance, Errors) :-
     append(Errors3, TeachingErrors, Errors4),
     append(Errors4, RestrictionErrors, Errors).
 
-%% A relationship between settings and their checks
+%% A relationship between settings and their errors
 
 validateSettings(Settings, IsDaysValid, IsSlotsValid, Errors) :-
     Keys = ["dias", "franjas", "inicio", "duracion_franja"],
@@ -22,7 +22,7 @@ validateSettings(Settings, IsDaysValid, IsSlotsValid, Errors) :-
     validateSettings(Settings, Settings, 0, 0, IsDaysValid, IsSlotsValid, RecordErrors),
     append(MissingErrors, RecordErrors, Errors).
 
-%% A relationship between settings and key counts
+%% A relationship between settings and their key counts
 
 validateSettings([], _, 1, 1, true, true, []).
 
@@ -75,7 +75,7 @@ validateRequiredSettings([Key|Keys], Settings, [Message|Errors]) :-
     append("CONFIG: Missing required key ", Key, Message),
     validateRequiredSettings(Keys, Settings, Errors).
 
-%% A relationship between a start time and its range errors
+%% A relationship between a start time and its errors
 
 validateStartTime(startTime(Hour, Minute), _, []) :-
     Hour =< 23, Minute =< 59, !.
@@ -85,7 +85,7 @@ validateStartTime(_, Line, [Message]) :-
     append("Line ", LineDigits, Message1),
     append(Message1, ": Invalid start time", Message).
 
-%% A relationship between section records and all their errors
+%% A relationship between section records and their errors
 
 validateRecords(_, [], _, _, _, []).
 
@@ -167,7 +167,7 @@ findRecord(groups, groupKey(Course, Group), [Record|_], Record) :-
 findRecord(Section, Key, [_|Records], Record) :-
     findRecord(Section, Key, Records, Record).
 
-%% A relationship between a declaration and an earlier duplicate
+%% A relationship between a record and an earlier duplicate
 
 validateDuplicate(config, Key, Line, Records, [Message]) :-
     findRecord(config, Key, Records, record(FirstLine, _)),
@@ -207,7 +207,7 @@ validateDuplicate(groups, Key, Line, Records, [Message]) :-
 
 validateDuplicate(_, _, _, _, []).
 
-%% A relationship between a reference and its declaration
+%% A relationship between a used code and its declared record
 
 validateReference(Section, Key, _, Records, []) :-
     findRecord(Section, Key, Records, _), !.
@@ -232,7 +232,7 @@ validateReference(teachers, Code, Line, _, [Message]) :-
     append(Message1, ": Unknown teacher ", Message2),
     append(Message2, Code, Message).
 
-%% A relationship between a day and the configured days
+%% A relationship between a day and the allowed days
 
 validateDay(_, _, _, false, []) :- !.
 
@@ -246,7 +246,7 @@ validateDay(Day, Line, _, true, [Message]) :-
     append(Message1, ": Unknown day ", Message2),
     append(Message2, Day, Message).
 
-%% A relationship between a slot index and its bounds
+%% A relationship between a slot number and its allowed range
 
 validateSlot(Slot, Line, _, _, [Message]) :-
     Slot < 1, !,
@@ -265,7 +265,7 @@ validateSlot(_, Line, _, true, [Message]) :-
     append("Line ", LineDigits, Message1),
     append(Message1, ": Slot exceeds the daily limit", Message).
 
-%% A relationship between a day-slot pair and both its checks
+%% A relationship between a day and slot number and their errors
 
 validateDaySlot(daySlot(Day, Slot), Line, Settings, IsDaysValid, IsSlotsValid, Errors) :-
     validateDay(Day, Line, Settings, IsDaysValid, DayErrors),
@@ -322,7 +322,7 @@ validateDuration(_, Line, _, true, [Message]) :-
     append("Line ", LineDigits, Message1),
     append(Message1, ": Group duration exceeds the daily limit", Message).
 
-%% A relationship between a group and at least one teaching declaration
+%% A relationship between a group and its teacher
 
 validateGroupHasTeacher(groupKey(Course, Group), _, Teaching, []) :-
     member(record(_, [Course, Group, _]), Teaching), !.

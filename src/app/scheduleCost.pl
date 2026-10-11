@@ -29,14 +29,14 @@ preferenceCost(Course, Group, Day, Start, _, Schedule, 0) :-
 preferenceCost(Course, Group, Day, Start, Weight, Schedule, Weight) :-
     \+ member(assignment(Course, Group, _, _, Day, Start, _), Schedule).
 
-%% A relationship between a group's gaps and their weighted penalty
+%% A relationship between a group's gaps and their cost
 
 compactCost(Course, Group, Weight, Schedule, Cost) :-
     groupOccupation(Course, Group, Schedule, Occupied),
     slotGaps(Occupied, Gaps),
     Cost is Weight*Gaps.
 
-%% A relationship between a group and its distinct occupied slots
+%% A relationship between a group and its occupied slots
 
 groupOccupation(Course, Group, Schedule, Occupied) :-
     findall(
@@ -49,7 +49,7 @@ groupOccupation(Course, Group, Schedule, Occupied) :-
     ),
     sort(RepeatedSlots, Occupied).
 
-%% A relationship between a session's start, duration and occupied positions
+%% A relationship between a session start, its length and its occupied slots
 
 occupiedSlot(Start, Duration, Start) :-
     Duration > 0.
@@ -60,7 +60,7 @@ occupiedSlot(Start, Duration, Position) :-
     RemainingDuration is Duration-1,
     occupiedSlot(NextStart, RemainingDuration, Position).
 
-%% A relationship between sorted distinct occupied slots and their daily gaps
+%% A relationship between sorted occupied slots and their daily gaps
 
 slotGaps([], 0).
 

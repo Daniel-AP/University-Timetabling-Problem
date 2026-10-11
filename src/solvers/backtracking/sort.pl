@@ -22,7 +22,7 @@ sortSlots(lcv, Session, CompatibleSlots, OtherPendingSessions, Domains, Assigned
     keysort(Pairs, SortedPairs),
     findall(Slot, member(_-Slot, SortedPairs), SortedSlots).
 
-%% A relationship between pending sessions and their total compatible location count
+%% A relationship between pending sessions and their compatible location count
 
 remainingSlotCount([], _, _, 0).
 
