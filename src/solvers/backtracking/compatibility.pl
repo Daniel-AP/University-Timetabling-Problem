@@ -26,3 +26,15 @@ compatibleAssignment(Session, Slot, AssignedSessions) :-
 sessionAssignment(session(Course, Group, _), slot(Room, Day, Start), assignment(Course, Group, Teachers, Room, Day, Start, Duration)) :-
     group(Course, Group, _, _, _, Duration, _),
     groupTeachers(Course, Group, Teachers).
+
+%% A relationship between a session domain and its compatible branch locations
+
+compatibleSlots(_, [], _, []).
+
+compatibleSlots(Session, [Slot|Slots], AssignedSessions, CompatibleSlots) :-
+    compatibleAssignment(Session, Slot, AssignedSessions), !,
+    CompatibleSlots = [Slot|RestCompatibleSlots],
+    compatibleSlots(Session, Slots, AssignedSessions, RestCompatibleSlots).
+
+compatibleSlots(Session, [_|Slots], AssignedSessions, CompatibleSlots) :-
+    compatibleSlots(Session, Slots, AssignedSessions, CompatibleSlots).
