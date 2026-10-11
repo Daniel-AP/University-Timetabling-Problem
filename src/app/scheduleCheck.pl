@@ -43,13 +43,7 @@ checkAssignment(assignment(Course, Group, Professors, Room, Day, Start, Duration
         Availabilities
     ),
     groupAvailable(Availabilities, Day, Start),
-    \+ (fixedRoom(Course, Group, FixedRoom), FixedRoom \= Room),
-    End is Start+Duration,
-    \+ (
-        forbiddenSlot(Course, Group, Day, Forbidden),
-        Forbidden >= Start,
-        Forbidden < End
-    ).
+    allowedSlot(Course, Group, slot(Room, Day, Start)).
 
 %% A relationship between group requirements and their exact session counts
 

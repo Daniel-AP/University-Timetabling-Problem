@@ -74,19 +74,13 @@ groupHasRoom(Enrolled, Requirement) :-
 %% A relationship between a group and its individually permitted locations
 
 groupSlots(Course, Group, Slots) :-
-    group(Course, Group, _, _, _, Duration, _),
+    group(Course, Group, _, _, _, _, _),
     sessionDomain(session(Course, Group, 1), BaseSlots),
     findall(
         slot(Room, Day, Start),
         (
             member(slot(Room, Day, Start), BaseSlots),
-            \+ (fixedRoom(Course, Group, FixedRoom), FixedRoom \= Room),
-            End is Start+Duration,
-            \+ (
-                forbiddenSlot(Course, Group, Day, Forbidden),
-                Forbidden >= Start,
-                Forbidden < End
-            )
+            allowedSlot(Course, Group, slot(Room, Day, Start))
         ),
         Slots
     ).
