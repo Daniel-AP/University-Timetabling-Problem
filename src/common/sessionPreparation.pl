@@ -18,8 +18,7 @@ buildSessions([[Course, Group, WeeklySessions]|Groups], Sessions) :-
 groupSessions(_, _, Ordinal, WeeklySessions, []) :-
     Ordinal > WeeklySessions.
 
-groupSessions(Course, Group, Ordinal, WeeklySessions,
-        [session(Course, Group, Ordinal)|Sessions]) :-
+groupSessions(Course, Group, Ordinal, WeeklySessions, [session(Course, Group, Ordinal)|Sessions]) :-
     Ordinal =< WeeklySessions,
     NextOrdinal is Ordinal+1,
     groupSessions(Course, Group, NextOrdinal, WeeklySessions, Sessions).
@@ -42,30 +41,33 @@ sessionDomain(Session, Slots) :-
 possibleSlot(session(Course, Group, _), slot(Room, Day, Start)) :-
     group(Course, Group, _, Enrolled, _, Duration, Requirement),
     instanceSetting("dias", Days),
-    instanceSetting("franjas", Slots),
-    LastStart is Slots-Duration+1,
+    instanceSetting("franjas", DailySlotCount),
+    LastStart is DailySlotCount-Duration+1,
     findall(
         Availability,
-        (teaches(Course, Group, Teacher), teacher(Teacher, _, _, Availability)),
+        (
+            teaches(Course, Group, Teacher),
+            teacher(Teacher, _, _, Availability)
+        ),
         Availabilities
     ),
     room(Room, Capacity, Type),
     Capacity >= Enrolled,
     roomTypeCompatible(Requirement, Type),
     member(Day, Days),
-    startBetween(1, LastStart, Start),
-    Start =< Slots,
+    slotBetween(1, LastStart, Start),
+    Start =< DailySlotCount,
     groupAvailable(Availabilities, Day, Start).
 
 %% A relationship between a number range and its numbers in order
 
-startBetween(Current, Last, Current) :-
-    Current =< Last.
+slotBetween(CurrentSlot, LastSlot, CurrentSlot) :-
+    CurrentSlot =< LastSlot.
 
-startBetween(Current, Last, Start) :-
-    Current < Last,
-    Next is Current+1,
-    startBetween(Next, Last, Start).
+slotBetween(CurrentSlot, LastSlot, Slot) :-
+    CurrentSlot < LastSlot,
+    NextSlot is CurrentSlot+1,
+    slotBetween(NextSlot, LastSlot, Slot).
 
 %% A relationship between a requirement and a compatible room type
 
@@ -91,8 +93,10 @@ groupAvailable([Availability|Availabilities], Day, Start) :-
 
 availableStart(all, _, _).
 
-availableStart([dayRange(daySlot(Day, First), daySlot(Day, Last))|_], Day, Start) :-
-    Start >= First, Start =< Last, !.
+availableStart([dayRange(daySlot(Day, FirstSlot), daySlot(Day, LastSlot))|_], Day, Start) :-
+    Start >= FirstSlot,
+    Start =< LastSlot,
+    !.
 
 availableStart([_|Ranges], Day, Start) :-
     availableStart(Ranges, Day, Start).

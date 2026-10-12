@@ -39,7 +39,7 @@ groupInconsistency(Course, Group, Message) :-
     group(Course, Group, _, Enrolled, WeeklySessions, _, Requirement),
     WeeklySessions > 0,
     groupHasRoom(Enrolled, Requirement),
-    groupSlots(Course, Group, []),
+    groupAllowedSlots(Course, Group, []),
     append("Group ", Course, Message1),
     append(Message1, "/", Message2),
     append(Message2, Group, Message3),
@@ -47,15 +47,16 @@ groupInconsistency(Course, Group, Message) :-
 
 groupInconsistency(Course, Group, Message) :-
     group(Course, Group, _, _, WeeklySessions, Duration, _),
-    WeeklySessions > 0, Duration > 0,
-    groupSlots(Course, Group, Slots),
+    WeeklySessions > 0,
+    Duration > 0,
+    groupAllowedSlots(Course, Group, Slots),
     Slots = [_|_],
     findall(daySlot(Day, Start), member(slot(_, Day, Start), Slots), RepeatedTimes),
     sort(RepeatedTimes, Times),
-    groupMaxSessions(Times, Duration, MaxSessions),
-    WeeklySessions > MaxSessions,
+    groupSessionCapacity(Times, Duration, SessionCapacity),
+    WeeklySessions > SessionCapacity,
     number_codes(WeeklySessions, WeeklyDigits),
-    number_codes(MaxSessions, MaxDigits),
+    number_codes(SessionCapacity, MaxDigits),
     append("Group ", Course, Message1),
     append(Message1, "/", Message2),
     append(Message2, Group, Message3),
@@ -69,11 +70,12 @@ groupInconsistency(Course, Group, Message) :-
 groupHasRoom(Enrolled, Requirement) :-
     room(_, Capacity, Type),
     Capacity >= Enrolled,
-    roomTypeCompatible(Requirement, Type), !.
+    roomTypeCompatible(Requirement, Type),
+    !.
 
 %% A relationship between a group and its allowed locations
 
-groupSlots(Course, Group, Slots) :-
+groupAllowedSlots(Course, Group, Slots) :-
     group(Course, Group, _, _, _, _, _),
     sessionDomain(session(Course, Group, 1), BaseSlots),
     findall(
@@ -87,88 +89,89 @@ groupSlots(Course, Group, Slots) :-
 
 %% A relationship between session starts and the maximum number of sessions that fit
 
-groupMaxSessions([], _, 0).
+groupSessionCapacity([], _, 0).
 
-groupMaxSessions([daySlot(Day, Start)|Times], Duration, MaxSessions) :-
+groupSessionCapacity([daySlot(Day, Start)|Times], Duration, SessionCapacity) :-
     NextStart is Start+Duration,
     findall(
         daySlot(OtherDay, OtherStart),
         (
             member(daySlot(OtherDay, OtherStart), Times),
-            \+ (OtherDay = Day, OtherStart < NextStart)
+            \+ (
+                OtherDay = Day,
+                OtherStart < NextStart
+            )
         ),
         RemainingTimes
     ),
-    groupMaxSessions(RemainingTimes, Duration, RestMax),
-    MaxSessions is RestMax+1.
+    groupSessionCapacity(RemainingTimes, Duration, RestCapacity),
+    SessionCapacity is RestCapacity+1.
 
 %% A relationship between a teacher and an error that prevents a solution
 
 teacherInconsistency(Teacher, Groups, Message) :-
     teacher(Teacher, _, MaxSlots, _),
-    teacherDemand(Teacher, Groups, Demand),
-    Demand > MaxSlots,
-    number_codes(Demand, DemandDigits),
+    teacherRequiredSlots(Teacher, Groups, RequiredSlots),
+    RequiredSlots > MaxSlots,
+    number_codes(RequiredSlots, RequiredDigits),
     number_codes(MaxSlots, MaxDigits),
     append("Teacher ", Teacher, Message1),
     append(Message1, ": Required slots ", Message2),
-    append(Message2, DemandDigits, Message3),
+    append(Message2, RequiredDigits, Message3),
     append(Message3, " exceed weekly maximum ", Message4),
     append(Message4, MaxDigits, Message).
 
 teacherInconsistency(Teacher, Groups, Message) :-
-    teacherDemand(Teacher, Groups, Demand),
-    teacherMaxCoverage(Teacher, Groups, Coverage),
-    Demand > Coverage,
-    number_codes(Demand, DemandDigits),
+    teacherRequiredSlots(Teacher, Groups, RequiredSlots),
+    teacherSlotCoverage(Teacher, Groups, Coverage),
+    RequiredSlots > Coverage,
+    number_codes(RequiredSlots, RequiredDigits),
     number_codes(Coverage, CoverageDigits),
     append("Teacher ", Teacher, Message1),
     append(Message1, ": Required slots ", Message2),
-    append(Message2, DemandDigits, Message3),
+    append(Message2, RequiredDigits, Message3),
     append(Message3, " exceed possible coverage ", Message4),
     append(Message4, CoverageDigits, Message).
 
 %% A relationship between a teacher and a group they teach
 
 teacherHasGroup(Teacher, Course, Group) :-
-    teaches(Course, Group, Teacher), !.
+    teaches(Course, Group, Teacher),
+    !.
 
 %% A relationship between a teacher's groups and their required weekly slots
 
-teacherDemand(_, [], 0).
+teacherRequiredSlots(_, [], 0).
 
-teacherDemand(Teacher, [[_, _, 0, _]|Groups], Demand) :-
-    teacherDemand(Teacher, Groups, Demand).
+teacherRequiredSlots(Teacher, [[_, _, 0, _]|Groups], RequiredSlots) :-
+    teacherRequiredSlots(Teacher, Groups, RequiredSlots).
 
-teacherDemand(Teacher, [[Course, Group, WeeklySessions, _]|Groups], Demand) :-
+teacherRequiredSlots(Teacher, [[Course, Group, WeeklySessions, _]|Groups], RequiredSlots) :-
     WeeklySessions > 0,
     \+ teacherHasGroup(Teacher, Course, Group),
-    teacherDemand(Teacher, Groups, Demand).
+    teacherRequiredSlots(Teacher, Groups, RequiredSlots).
 
-teacherDemand(Teacher, [[Course, Group, WeeklySessions, Duration]|Groups], Demand) :-
+teacherRequiredSlots(Teacher, [[Course, Group, WeeklySessions, Duration]|Groups], RequiredSlots) :-
     WeeklySessions > 0,
     teacherHasGroup(Teacher, Course, Group),
-    teacherDemand(Teacher, Groups, RestDemand),
-    Demand is WeeklySessions*Duration+RestDemand.
+    teacherRequiredSlots(Teacher, Groups, RestRequiredSlots),
+    RequiredSlots is WeeklySessions*Duration+RestRequiredSlots.
 
 %% A relationship between a teacher and their possible slot count
 
-teacherMaxCoverage(Teacher, Groups, Coverage) :-
+teacherSlotCoverage(Teacher, Groups, Coverage) :-
     findall(
         daySlot(Day, Position),
         (
             member([Course, Group, WeeklySessions, Duration], Groups),
             WeeklySessions > 0,
             teacherHasGroup(Teacher, Course, Group),
-
-            groupSlots(Course, Group, Slots),
+            groupAllowedSlots(Course, Group, Slots),
             member(slot(_, Day, Start), Slots),
-
-            Last is Start + Duration - 1,
-            startBetween(Start, Last, Position)
+            LastSlot is Start+Duration-1,
+            slotBetween(Start, LastSlot, Position)
         ),
         RepeatedTimes
     ),
-
     sort(RepeatedTimes, CoveredTimes),
     length(CoveredTimes, Coverage).

@@ -1,44 +1,44 @@
 %% A relationship between a session, its student count and its length
 
-demandData(session(Course, Group, _), Enrolled, Duration) :-
+sessionDemand(session(Course, Group, _), Enrolled, Duration) :-
     group(Course, Group, _, Enrolled, _, Duration, _).
 
-%% A relationship between two sessions where the first has greater demand
+%% A relationship between two sessions and their demand order
 
 greaterDemand(First, Second) :-
-    demandData(First, Enrolled, _),
-    demandData(Second, OtherEnrolled, _),
+    sessionDemand(First, Enrolled, _),
+    sessionDemand(Second, OtherEnrolled, _),
     Enrolled > OtherEnrolled.
 
 greaterDemand(First, Second) :-
-    demandData(First, Enrolled, Duration),
-    demandData(Second, Enrolled, OtherDuration),
+    sessionDemand(First, Enrolled, Duration),
+    sessionDemand(Second, Enrolled, OtherDuration),
     Duration > OtherDuration.
 
-%% A relationship between a session and its rule count with pending sessions
+%% A relationship between a session and its constraint count with pending sessions
 
-degree(_, [], 0).
+sessionDegree(_, [], 0).
 
-degree(Session, [Session|PendingSessions], Degree) :-
-    degree(Session, PendingSessions, Degree).
+sessionDegree(Session, [Session|PendingSessions], Degree) :-
+    sessionDegree(Session, PendingSessions, Degree).
 
-degree(Session, [OtherSession|PendingSessions], Degree) :-
+sessionDegree(Session, [OtherSession|PendingSessions], Degree) :-
     Session \= OtherSession,
-    pairRuleCount(Session, OtherSession, Count),
-    degree(Session, PendingSessions, RestDegree),
+    pairConstraintCount(Session, OtherSession, Count),
+    sessionDegree(Session, PendingSessions, RestDegree),
     Degree is Count+RestDegree.
 
-%% A relationship between two sessions and their number of hard rules
+%% A relationship between two sessions and their number of hard constraints
 
-pairRuleCount(Session, Session, 0).
+pairConstraintCount(Session, Session, 0).
 
-pairRuleCount(First, Second, Count) :-
+pairConstraintCount(First, Second, Count) :-
     First \= Second,
     findall(Constraint, pairConstraint(First, Second, Constraint), RepeatedConstraints),
     sort(RepeatedConstraints, Constraints),
     length(Constraints, Count).
 
-%% A relationship between two sessions and a hard rule
+%% A relationship between two sessions and a hard constraint
 
 pairConstraint(_, _, room).
 

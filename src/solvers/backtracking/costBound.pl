@@ -1,19 +1,12 @@
 %% A relationship between a branch and a lower bound on its cost
 
-lowerBound(btState(PendingSessions, AssignedSessions), Bound) :-
-    findall(
-        Assignment,
-        (
-            member(tentativeAssignment(Session, Slot), AssignedSessions),
-            sessionAssignment(Session, Slot, Assignment)
-        ),
-        Assignments
-    ),
+btCostBound(btState(PendingSessions, AssignedSessions), Bound) :-
+    assignmentsSchedule(AssignedSessions, Assignments),
     findall(
         Penalty,
         (
             preferredSlot(Course, Group, Day, Start, Weight),
-            completeGroup(Course, Group, PendingSessions),
+            btCompleteGroup(Course, Group, PendingSessions),
             preferenceCost(Course, Group, Day, Start, Weight, Assignments, Penalty)
         ),
         PreferenceCosts
@@ -22,7 +15,7 @@ lowerBound(btState(PendingSessions, AssignedSessions), Bound) :-
         Penalty,
         (
             compactGroup(Course, Group, Weight),
-            completeGroup(Course, Group, PendingSessions),
+            btCompleteGroup(Course, Group, PendingSessions),
             compactCost(Course, Group, Weight, Assignments, Penalty)
         ),
         CompactCosts
@@ -33,5 +26,5 @@ lowerBound(btState(PendingSessions, AssignedSessions), Bound) :-
 
 %% A relationship between a group and the absence of its pending sessions
 
-completeGroup(Course, Group, PendingSessions) :-
+btCompleteGroup(Course, Group, PendingSessions) :-
     \+ member(session(Course, Group, _), PendingSessions).

@@ -33,20 +33,6 @@ removeLeadingSpaces([32|Bytes], RemainingBytes) :-
 
 removeLeadingSpaces(Bytes, Bytes).
 
-%% A relationship between number text and its integer value
-
-parseNumber([Byte|Bytes], Number) :-
-    parseNumberDigits([Byte|Bytes], 0, Number).
-
-%% A relationship between digits and the number they form
-
-parseNumberDigits([], Number, Number).
-
-parseNumberDigits([Byte|Bytes], Accum, Number) :-
-    Byte >= 48, Byte =< 57,
-    NextAccum is Accum*10+Byte-48,
-    parseNumberDigits(Bytes, NextAccum, Number).
-
 %% A relationship between day text and its list of days
 
 parseDays(Bytes, [Day]) :-
@@ -61,40 +47,61 @@ parseDays(Bytes, [Day|Days]) :-
 %% A relationship between bytes, their first UTF-8 character and the remaining bytes
 
 takeCharacter([Byte|Bytes], [Byte], Bytes) :-
-    Byte >= 0, Byte =< 127.
+    Byte >= 0,
+    Byte =< 127.
 
 takeCharacter([First, Second|Bytes], [First, Second], Bytes) :-
-    First >= 194, First =< 223,
-    Second >= 128, Second =< 191.
+    First >= 194,
+    First =< 223,
+    Second >= 128,
+    Second =< 191.
 
 takeCharacter([224, Second, Third|Bytes], [224, Second, Third], Bytes) :-
-    Second >= 160, Second =< 191,
-    Third >= 128, Third =< 191.
+    Second >= 160,
+    Second =< 191,
+    Third >= 128,
+    Third =< 191.
 
 takeCharacter([First, Second, Third|Bytes], [First, Second, Third], Bytes) :-
-    First >= 225, First =< 239, First =\= 237,
-    Second >= 128, Second =< 191,
-    Third >= 128, Third =< 191.
+    First >= 225,
+    First =< 239,
+    First =\= 237,
+    Second >= 128,
+    Second =< 191,
+    Third >= 128,
+    Third =< 191.
 
 takeCharacter([237, Second, Third|Bytes], [237, Second, Third], Bytes) :-
-    Second >= 128, Second =< 159,
-    Third >= 128, Third =< 191.
+    Second >= 128,
+    Second =< 159,
+    Third >= 128,
+    Third =< 191.
 
 takeCharacter([240, Second, Third, Fourth|Bytes], [240, Second, Third, Fourth], Bytes) :-
-    Second >= 144, Second =< 191,
-    Third >= 128, Third =< 191,
-    Fourth >= 128, Fourth =< 191.
+    Second >= 144,
+    Second =< 191,
+    Third >= 128,
+    Third =< 191,
+    Fourth >= 128,
+    Fourth =< 191.
 
 takeCharacter([First, Second, Third, Fourth|Bytes], [First, Second, Third, Fourth], Bytes) :-
-    First >= 241, First =< 243,
-    Second >= 128, Second =< 191,
-    Third >= 128, Third =< 191,
-    Fourth >= 128, Fourth =< 191.
+    First >= 241,
+    First =< 243,
+    Second >= 128,
+    Second =< 191,
+    Third >= 128,
+    Third =< 191,
+    Fourth >= 128,
+    Fourth =< 191.
 
 takeCharacter([244, Second, Third, Fourth|Bytes], [244, Second, Third, Fourth], Bytes) :-
-    Second >= 128, Second =< 143,
-    Third >= 128, Third =< 191,
-    Fourth >= 128, Fourth =< 191.
+    Second >= 128,
+    Second =< 143,
+    Third >= 128,
+    Third =< 191,
+    Fourth >= 128,
+    Fourth =< 191.
 
 %% A relationship between time text and its hour and minute
 
@@ -110,7 +117,8 @@ parseDaySlot(Bytes, daySlot(Day, Slot)) :-
 
 %% A relationship between availability text and its time ranges
 
-parseAvailability([], all) :- !.
+parseAvailability([], all) :-
+    !.
 
 parseAvailability(Bytes, Ranges) :-
     splitBytes(Bytes, 44, RangeFields),

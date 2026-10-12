@@ -32,13 +32,13 @@ preferenceCost(Course, Group, Day, Start, Weight, Schedule, Weight) :-
 %% A relationship between a group's gaps and their cost
 
 compactCost(Course, Group, Weight, Schedule, Cost) :-
-    groupOccupation(Course, Group, Schedule, Occupied),
-    slotGaps(Occupied, Gaps),
+    groupOccupiedSlots(Course, Group, Schedule, OccupiedSlots),
+    slotGaps(OccupiedSlots, Gaps),
     Cost is Weight*Gaps.
 
 %% A relationship between a group and its occupied slots
 
-groupOccupation(Course, Group, Schedule, Occupied) :-
+groupOccupiedSlots(Course, Group, Schedule, OccupiedSlots) :-
     findall(
         daySlot(Day, Position),
         (
@@ -47,7 +47,7 @@ groupOccupation(Course, Group, Schedule, Occupied) :-
         ),
         RepeatedSlots
     ),
-    sort(RepeatedSlots, Occupied).
+    sort(RepeatedSlots, OccupiedSlots).
 
 %% A relationship between a session start, its length and its occupied slots
 
@@ -66,13 +66,13 @@ slotGaps([], 0).
 
 slotGaps([_], 0).
 
-slotGaps([daySlot(Day, Current), daySlot(Day, Next)|Slots], Gaps) :-
-    slotGaps([daySlot(Day, Next)|Slots], RestGaps),
+slotGaps([daySlot(Day, Current), daySlot(Day, Next)|OccupiedSlots], Gaps) :-
+    slotGaps([daySlot(Day, Next)|OccupiedSlots], RestGaps),
     Gaps is Next-Current-1+RestGaps.
 
-slotGaps([daySlot(Day, _), daySlot(OtherDay, Next)|Slots], Gaps) :-
+slotGaps([daySlot(Day, _), daySlot(OtherDay, Next)|OccupiedSlots], Gaps) :-
     Day \= OtherDay,
-    slotGaps([daySlot(OtherDay, Next)|Slots], Gaps).
+    slotGaps([daySlot(OtherDay, Next)|OccupiedSlots], Gaps).
 
 %% A relationship between penalties and their sum
 

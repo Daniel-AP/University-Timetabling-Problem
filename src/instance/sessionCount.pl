@@ -2,12 +2,12 @@
 
 sessionCount(TotalSessions) :-
     findall(WeeklySessions, group(_, _, _, _, WeeklySessions, _, _), WeeklyCounts),
-    sessionSum(WeeklyCounts, TotalSessions).
+    sessionCountSum(WeeklyCounts, TotalSessions).
 
 %% A relationship between weekly session counts and their sum
 
-sessionSum([], 0).
+sessionCountSum([], 0).
 
-sessionSum([WeeklySessions|WeeklyCounts], TotalSessions) :-
-    sessionSum(WeeklyCounts, RestTotal),
+sessionCountSum([WeeklySessions|WeeklyCounts], TotalSessions) :-
+    sessionCountSum(WeeklyCounts, RestTotal),
     TotalSessions is WeeklySessions+RestTotal.

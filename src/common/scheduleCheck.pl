@@ -7,10 +7,10 @@ checkSchedule(Schedule) :-
         group(Course, Group, _, _, WeeklySessions, _, _),
         Groups
     ),
-    checkGroups(Groups, Schedule),
-    checkPairs(Schedule),
-    findall([Teacher, MaxSlots], teacher(Teacher, _, MaxSlots, _), Teachers),
-    checkTeachers(Teachers, Schedule).
+    checkGroupSessionCounts(Groups, Schedule),
+    checkAssignmentPairs(Schedule),
+    findall([Teacher, MaxSlots], teacher(Teacher, _, MaxSlots, _), TeacherLimits),
+    checkTeacherLoads(TeacherLimits, Schedule).
 
 %% A relationship between assignments and their validity
 
@@ -22,24 +22,28 @@ checkAssignments([Assignment|Assignments]) :-
 
 %% A relationship between an assignment and its rules
 
-checkAssignment(assignment(Course, Group, Professors, Room, Day, Start, Duration)) :-
+checkAssignment(assignment(Course, Group, GivenTeachers, Room, Day, Start, Duration)) :-
     group(Course, Group, _, Enrolled, _, Duration, Requirement),
-    groupTeachers(Course, Group, Teachers),
-    sort(Professors, Teachers),
-    length(Teachers, TeacherCount),
-    length(Professors, TeacherCount),
+    groupTeachers(Course, Group, ExpectedTeachers),
+    sort(GivenTeachers, ExpectedTeachers),
+    length(ExpectedTeachers, TeacherCount),
+    length(GivenTeachers, TeacherCount),
     room(Room, Capacity, Type),
     Capacity >= Enrolled,
     roomTypeCompatible(Requirement, Type),
     instanceSetting("dias", Days),
     member(Day, Days),
-    instanceSetting("franjas", Slots),
-    Start >= 1, Start =< Slots,
-    Last is Start+Duration-1,
-    Last =< Slots,
+    instanceSetting("franjas", DailySlotCount),
+    Start >= 1,
+    Start =< DailySlotCount,
+    LastSlot is Start+Duration-1,
+    LastSlot =< DailySlotCount,
     findall(
         Availability,
-        (member(Teacher, Teachers), teacher(Teacher, _, _, Availability)),
+        (
+            member(Teacher, ExpectedTeachers),
+            teacher(Teacher, _, _, Availability)
+        ),
         Availabilities
     ),
     groupAvailable(Availabilities, Day, Start),
@@ -47,24 +51,27 @@ checkAssignment(assignment(Course, Group, Professors, Room, Day, Start, Duration
 
 %% A relationship between groups and their required session counts
 
-checkGroups([], _).
+checkGroupSessionCounts([], _).
 
-checkGroups([[Course, Group, WeeklySessions]|Groups], Schedule) :-
+checkGroupSessionCounts([[Course, Group, WeeklySessions]|Groups], Schedule) :-
     findall(
         1,
         member(assignment(Course, Group, _, _, _, _, _), Schedule),
         Matches
     ),
     length(Matches, WeeklySessions),
-    checkGroups(Groups, Schedule).
+    checkGroupSessionCounts(Groups, Schedule).
 
 %% A relationship between assignments and their lack of conflicts
 
-checkPairs([]).
+checkAssignmentPairs([]).
 
-checkPairs([Assignment|Assignments]) :-
-    \+ (member(Other, Assignments), assignmentConflict(Assignment, Other)),
-    checkPairs(Assignments).
+checkAssignmentPairs([Assignment|Assignments]) :-
+    \+ (
+        member(Other, Assignments),
+        assignmentConflict(Assignment, Other)
+    ),
+    checkAssignmentPairs(Assignments).
 
 %% A relationship between two assignments and a hard conflict
 
@@ -99,37 +106,32 @@ assignmentConflict(First, Second) :-
 
 %% A relationship between two assignments and their shared time
 
-assignmentOverlap(assignment(_, _, _, _, Day, Start, Duration),
-        assignment(_, _, _, _, Day, OtherStart, OtherDuration)) :-
-    Duration > 0, OtherDuration > 0,
-    End is Start+Duration,
-    OtherEnd is OtherStart+OtherDuration,
-    Start < OtherEnd, OtherStart < End.
+assignmentOverlap(assignment(_, _, _, _, Day, Start, Duration), assignment(_, _, _, _, Day, OtherStart, OtherDuration)) :-
+    Duration > 0,
+    OtherDuration > 0,
+    EndExclusive is Start+Duration,
+    OtherEndExclusive is OtherStart+OtherDuration,
+    Start < OtherEndExclusive,
+    OtherStart < EndExclusive.
 
 %% A relationship between teachers and their weekly limits
 
-checkTeachers([], _).
+checkTeacherLoads([], _).
 
-checkTeachers([[Teacher, MaxSlots]|Teachers], Schedule) :-
-    teacherLoad(Teacher, Schedule, Load),
-    Load =< MaxSlots,
-    checkTeachers(Teachers, Schedule).
-
-%% A relationship between a group and its teachers without duplicates
-
-groupTeachers(Course, Group, Teachers) :-
-    findall(Teacher, teaches(Course, Group, Teacher), RepeatedTeachers),
-    sort(RepeatedTeachers, Teachers).
+checkTeacherLoads([[Teacher, MaxSlots]|TeacherLimits], Schedule) :-
+    teacherAssignedSlots(Teacher, Schedule, AssignedSlots),
+    AssignedSlots =< MaxSlots,
+    checkTeacherLoads(TeacherLimits, Schedule).
 
 %% A relationship between a teacher and their weekly slot count
 
-teacherLoad(_, [], 0).
+teacherAssignedSlots(_, [], 0).
 
-teacherLoad(Teacher, [assignment(_, _, Teachers, _, _, _, Duration)|Assignments], Load) :-
+teacherAssignedSlots(Teacher, [assignment(_, _, Teachers, _, _, _, Duration)|Assignments], AssignedSlots) :-
     member(Teacher, Teachers),
-    teacherLoad(Teacher, Assignments, RestLoad),
-    Load is Duration+RestLoad.
+    teacherAssignedSlots(Teacher, Assignments, RestAssignedSlots),
+    AssignedSlots is Duration+RestAssignedSlots.
 
-teacherLoad(Teacher, [assignment(_, _, Teachers, _, _, _, _)|Assignments], Load) :-
+teacherAssignedSlots(Teacher, [assignment(_, _, Teachers, _, _, _, _)|Assignments], AssignedSlots) :-
     \+ member(Teacher, Teachers),
-    teacherLoad(Teacher, Assignments, Load).
+    teacherAssignedSlots(Teacher, Assignments, AssignedSlots).
