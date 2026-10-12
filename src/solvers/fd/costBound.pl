@@ -36,7 +36,7 @@ fdCostBound(Model, Maps, Bound) :-
     costSum(CompactCosts, CompactTotal),
     Bound is PreferenceTotal+CompactTotal.
 
-%% A relationship between a group and the absence of its pending sessions
+%% A relationship between a group and its lack of pending sessions
 
 fdCompleteGroup(Course, Group, PendingSessions) :-
     \+ member(session(Course, Group, _), PendingSessions).

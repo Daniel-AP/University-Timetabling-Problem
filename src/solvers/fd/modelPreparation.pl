@@ -37,6 +37,4 @@ fdIndexedSlot(Session, indexMaps(Rooms, Days), [RoomIndex, DayIndex, Start]) :-
 %% A relationship between an identifier list and an indexed identifier
 
 fdIndexValue(Values, Index, Value) :-
-    append(Before, [Value|_], Values),
-    length(Before, Position),
-    Index is Position+1.
+    nth(Index, Values, Value).

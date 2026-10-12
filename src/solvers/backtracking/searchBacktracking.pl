@@ -122,7 +122,7 @@ btCheckNodeLimit(Limit, Nodes) :-
     integer(Limit),
     Nodes < Limit.
 
-%% A relationship between a return to a parent branch and its search count
+%% A relationship between a backtrack and its count
 
 btCountBacktrack :-
     retract(btSearchControl(Control, Backtracks)),

@@ -1,4 +1,4 @@
-%% A relationship between completed finite domain sessions and their common schedule
+%% A relationship between completed finite domain sessions and their schedule
 
 fdAssignmentsSchedule([], _, []).
 

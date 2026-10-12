@@ -22,7 +22,7 @@ fdSelectSession(demand, Model, _, SelectedSession) :-
     fdPendingSessions(Model, [Session|Sessions]),
     fdSelectDemand(Sessions, Session, SelectedSession).
 
-%% A relationship between prepared sessions and their pending identities
+%% A relationship between prepared sessions and their pending sessions
 
 fdPendingSessions([], []).
 

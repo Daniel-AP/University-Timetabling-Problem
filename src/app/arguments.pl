@@ -43,7 +43,7 @@ parseOptions([], Config, Config).
 parseOptions(['--optimizar'|Options], _, _) :-
     member('--optimizar', Options),
     !,
-    throw(argumentError('--optimizar', "Optimization was specified more than once")).
+    throw(argumentError('--optimizar', "Repeated optimization option")).
 
 parseOptions(['--optimizar'|Options], config(Input, Output, Strategy, Heuristic, _, Limit), Config) :-
     !,
@@ -57,7 +57,7 @@ parseOptions([Option|Options], _, _) :-
     atom(Other),
     atom_concat('--heuristica=', _, Other),
     !,
-    throw(argumentError(Option, "A heuristic was specified more than once")).
+    throw(argumentError(Option, "Repeated heuristic option")).
 
 parseOptions([Option|Options], config(Input, Output, Strategy, _, Optimize, Limit), Config) :-
     atom(Option),
@@ -85,7 +85,7 @@ parseOptions([Option|Options], _, _) :-
     atom(Other),
     atom_concat('--limite=', _, Other),
     !,
-    throw(argumentError(Option, "A limit was specified more than once")).
+    throw(argumentError(Option, "Repeated limit option")).
 
 parseOptions([Option|Options], config(Input, Output, Strategy, Heuristic, Optimize, _), Config) :-
     atom(Option),
@@ -96,7 +96,7 @@ parseOptions([Option|Options], config(Input, Output, Strategy, Heuristic, Optimi
     parseOptions(Options, NextConfig, Config).
 
 parseOptions([Option|_], _, _) :-
-    throw(argumentError(Option, "Unknown execution option")).
+    throw(argumentError(Option, "Unknown option")).
 
 %% A relationship between number text and a search limit
 

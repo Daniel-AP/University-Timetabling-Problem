@@ -3,7 +3,7 @@
 readInstance(Path, _) :-
     catch(file_property(Path, type(directory)), Cause, throw(instanceReadError(Path, Cause))),
     !,
-    throw(instanceReadError(Path, "Expected a file instead of a directory")).
+    throw(instanceReadError(Path, "Path is a directory")).
 
 readInstance(Path, Bytes) :-
     catch(open(Path, read, Stream, [type(binary)]), Cause, throw(instanceReadError(Path, Cause))),

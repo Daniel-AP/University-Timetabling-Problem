@@ -36,8 +36,10 @@ validateSettingRecords([], _, DaySettingCount, SlotSettingCount, false, false, [
     DaySettingCount =\= 1,
     SlotSettingCount =\= 1.
 
-validateSettingRecords([record(Line, ["dias", _])|Records], Settings, DaySettingCount, SlotSettingCount, DaysValid, SlotsValid, Errors) :-
-    validateDuplicate(config, "dias", Line, Settings, CurrentErrors),
+validateSettingRecords([record(Line, ["dias", Days])|Records], Settings, DaySettingCount, SlotSettingCount, DaysValid, SlotsValid, Errors) :-
+    validateDuplicate(config, "dias", Line, Settings, DuplicateErrors),
+    validateDays(Days, Line, DayErrors),
+    append(DuplicateErrors, DayErrors, CurrentErrors),
     NextCount is DaySettingCount+1,
     validateSettingRecords(Records, Settings, NextCount, SlotSettingCount, DaysValid, SlotsValid, RestErrors),
     append(CurrentErrors, RestErrors, Errors).
@@ -59,6 +61,22 @@ validateSettingRecords([record(Line, ["duracion_franja", _])|Records], Settings,
     validateDuplicate(config, "duracion_franja", Line, Settings, CurrentErrors),
     validateSettingRecords(Records, Settings, DaySettingCount, SlotSettingCount, DaysValid, SlotsValid, RestErrors),
     append(CurrentErrors, RestErrors, Errors).
+
+%% A relationship between configured days and their errors
+
+validateDays([], _, []).
+
+validateDays([Day|Days], Line, [Message|Errors]) :-
+    member(Day, Days),
+    !,
+    number_codes(Line, LineDigits),
+    append("Line ", LineDigits, Message1),
+    append(Message1, ": Duplicate day ", Message2),
+    append(Message2, Day, Message),
+    validateDays(Days, Line, Errors).
+
+validateDays([_|Days], Line, Errors) :-
+    validateDays(Days, Line, Errors).
 
 %% A relationship between required keys and missing settings
 

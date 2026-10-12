@@ -22,6 +22,10 @@ btCheckSessionPairOrder(session(Course, Group, Ordinal), Slot, session(Course, G
     Ordinal > OtherOrdinal,
     btSlotBefore(OtherSlot, Slot).
 
+btCheckSessionPairOrder(session(Course, Group, Ordinal), slot(_, Day, Start), session(Course, Group, OtherOrdinal), slot(_, Day, Start)) :-
+    Ordinal \= OtherOrdinal,
+    group(Course, Group, _, _, _, 0, _).
+
 %% A relationship between an earlier location and a later location
 
 btSlotBefore(slot(_, Day, Start), slot(_, Day, OtherStart)) :-

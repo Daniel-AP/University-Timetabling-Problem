@@ -33,7 +33,7 @@ groupInconsistency(Course, Group, Message) :-
     append("Group ", Course, Message1),
     append(Message1, "/", Message2),
     append(Message2, Group, Message3),
-    append(Message3, ": No compatible room with sufficient capacity", Message).
+    append(Message3, ": No room with the required type and capacity", Message).
 
 groupInconsistency(Course, Group, Message) :-
     group(Course, Group, _, Enrolled, WeeklySessions, _, Requirement),
@@ -43,7 +43,7 @@ groupInconsistency(Course, Group, Message) :-
     append("Group ", Course, Message1),
     append(Message1, "/", Message2),
     append(Message2, Group, Message3),
-    append(Message3, ": No permitted location", Message).
+    append(Message3, ": No allowed location", Message).
 
 groupInconsistency(Course, Group, Message) :-
     group(Course, Group, _, _, WeeklySessions, Duration, _),
@@ -62,7 +62,7 @@ groupInconsistency(Course, Group, Message) :-
     append(Message2, Group, Message3),
     append(Message3, ": Required sessions ", Message4),
     append(Message4, WeeklyDigits, Message5),
-    append(Message5, " exceed temporal capacity ", Message6),
+    append(Message5, " exceed the number that fit ", Message6),
     append(Message6, MaxDigits, Message).
 
 %% A relationship between group requirements and a suitable room
@@ -118,7 +118,7 @@ teacherInconsistency(Teacher, Groups, Message) :-
     append("Teacher ", Teacher, Message1),
     append(Message1, ": Required slots ", Message2),
     append(Message2, RequiredDigits, Message3),
-    append(Message3, " exceed weekly maximum ", Message4),
+    append(Message3, " exceed the weekly limit ", Message4),
     append(Message4, MaxDigits, Message).
 
 teacherInconsistency(Teacher, Groups, Message) :-
@@ -130,7 +130,7 @@ teacherInconsistency(Teacher, Groups, Message) :-
     append("Teacher ", Teacher, Message1),
     append(Message1, ": Required slots ", Message2),
     append(Message2, RequiredDigits, Message3),
-    append(Message3, " exceed possible coverage ", Message4),
+    append(Message3, " exceed available slots ", Message4),
     append(Message4, CoverageDigits, Message).
 
 %% A relationship between a teacher and a group they teach

@@ -83,17 +83,17 @@ fdAssignSession(Session, slot(Room, Day, TupleStart), Model, indexMaps(Rooms, Da
 
 fdAssignDecision(Decision, Value) :-
     Decision #>= Value,
-    fdLabelDecision(Decision, Value, min).
+    fdLabelDecision(Decision, Value).
 
-%% A relationship between a chosen value and its native labeling method
+%% A relationship between a decision and its chosen value
 
-fdLabelDecision(Decision, Value, _) :-
+fdLabelDecision(Decision, Value) :-
     integer(Decision),
     Decision = Value.
 
-fdLabelDecision(Decision, Value, Method) :-
+fdLabelDecision(Decision, Value) :-
     \+ integer(Decision),
-    fd_labeling(Decision, [value_method(Method)]),
+    fd_labeling(Decision, [value_method(min)]),
     !,
     Decision = Value.
 
@@ -156,7 +156,7 @@ fdCheckNodeLimit(Limit, Nodes) :-
     integer(Limit),
     Nodes < Limit.
 
-%% A relationship between a return to a parent branch and its search count
+%% A relationship between a backtrack and its count
 
 fdCountBacktrack :-
     retract(fdSearchControl(Control, Backtracks)),

@@ -10,7 +10,7 @@ sessionAssignment(session(Course, Group, _), slot(Room, Day, Start), assignment(
     group(Course, Group, _, _, _, Duration, _),
     groupTeachers(Course, Group, Teachers).
 
-%% A relationship between assigned sessions and their common schedule
+%% A relationship between assigned sessions and their schedule
 
 assignmentsSchedule([], []).
 

@@ -1,8 +1,7 @@
 %% A relationship between file bytes and an instance
 
 parseInstance(Bytes, Instance) :-
-    parseLines(Bytes, 1, none, [], ParsedInstance),
-    Instance = ParsedInstance.
+    parseLines(Bytes, 1, none, [], Instance).
 
 %% A relationship between file lines and their records
 
@@ -43,12 +42,12 @@ parseLine([35|_], _, _, skip) :-
 
 parseLine(_, Line, none, _) :-
     !,
-    throw(instanceParseError(Line, "A data record appears before any section")).
+    throw(instanceParseError(Line, "Record before a section")).
 
 parseLine(LineBytes, Line, _, _) :-
     member(35, LineBytes),
     !,
-    throw(instanceParseError(Line, "Unexpected # in a data record")).
+    throw(instanceParseError(Line, "Unexpected # in a record")).
 
 parseLine(LineBytes, Line, Section, record(Line, Values)) :-
     splitBytes(LineBytes, 59, Fields),
@@ -64,7 +63,7 @@ parseEntry(section(Section), _, NextLine, _, SeenSections, _) :-
     member(Section, SeenSections),
     !,
     Line is NextLine-1,
-    throw(instanceParseError(Line, "A section header appears more than once")).
+    throw(instanceParseError(Line, "Repeated section")).
 
 parseEntry(section(Section), Bytes, Line, _, SeenSections, Instance) :-
     parseLines(Bytes, Line, Section, [Section|SeenSections], Instance).
@@ -106,7 +105,7 @@ parseRecord(config, ["duracion_franja", Bytes], _, ["duracion_franja", Duration]
     !.
 
 parseRecord(config, _, Line, _) :-
-    throw(instanceParseError(Line, "Expected a known configuration key and a correctly formatted value")).
+    throw(instanceParseError(Line, "Unknown CONFIG key or bad value")).
 
 parseRecord(rooms, [Code, CapacityBytes, Type], _, [Code, Capacity, Type]) :-
     Code = [_|_],
