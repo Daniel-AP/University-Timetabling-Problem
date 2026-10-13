@@ -282,5 +282,9 @@ writeExecutionCause(error(permission_error(_, source_sink, _), _)) :-
     !,
     format(user_error, "Permission denied", []).
 
+writeExecutionCause(error(system_error('No such file or directory'), _)) :-
+    !,
+    format(user_error, "Path does not exist", []).
+
 writeExecutionCause(Cause) :-
     writeq(user_error, Cause).
