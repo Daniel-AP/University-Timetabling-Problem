@@ -5,12 +5,12 @@ sessionDemand(session(Course, Group, _), Enrolled, Duration) :-
 
 %% A relationship between two sessions and their demand order
 
-hasGreaterDemand(First, Second) :-
+isGreaterDemand(First, Second) :-
     sessionDemand(First, Enrolled, _),
     sessionDemand(Second, OtherEnrolled, _),
     Enrolled > OtherEnrolled.
 
-hasGreaterDemand(First, Second) :-
+isGreaterDemand(First, Second) :-
     sessionDemand(First, Enrolled, Duration),
     sessionDemand(Second, Enrolled, OtherDuration),
     Duration > OtherDuration.

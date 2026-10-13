@@ -50,8 +50,8 @@ registerRecord(config, record(_, [Key, Value])) :-
 registerRecord(rooms, record(_, [Code, Capacity, Type])) :-
     assertz(room(Code, Capacity, Type)).
 
-registerRecord(teachers, record(_, [Code, Name, MaxSlots, Availability])) :-
-    assertz(teacher(Code, Name, MaxSlots, Availability)).
+registerRecord(teachers, record(_, [Teacher, Name, MaxSlots, Availability])) :-
+    assertz(teacher(Teacher, Name, MaxSlots, Availability)).
 
 registerRecord(groups, record(_, [Course, Name, Group, Enrolled, WeeklySessions, Duration, Requirement])) :-
     assertz(group(Course, Group, Name, Enrolled, WeeklySessions, Duration, Requirement)).

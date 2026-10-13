@@ -23,8 +23,8 @@ fdConstrainRoomGroupAppearances([PreviousRoom, NextRoom|RoomGroup], Model, Maps)
 
 fdConstrainRoomPairAppearances([], _, _, _).
 
-fdConstrainRoomPairAppearances([fdSession(_, RoomIndex, _, _, _)|Model], PreviousRoomIndex, NextRoomIndex, EarlierAppearance) :-
+fdConstrainRoomPairAppearances([fdSession(_, RoomIndex, _, _, _)|Model], PreviousRoomIndex, NextRoomIndex, HasPreviousRoomAppearance) :-
     (RoomIndex #\= NextRoomIndex) #\/
-    EarlierAppearance,
-    NextEarlierAppearance = (EarlierAppearance #\/ (RoomIndex #= PreviousRoomIndex)),
-    fdConstrainRoomPairAppearances(Model, PreviousRoomIndex, NextRoomIndex, NextEarlierAppearance).
+    HasPreviousRoomAppearance,
+    HasPreviousRoomAppearanceForRest = (HasPreviousRoomAppearance #\/ (RoomIndex #= PreviousRoomIndex)),
+    fdConstrainRoomPairAppearances(Model, PreviousRoomIndex, NextRoomIndex, HasPreviousRoomAppearanceForRest).

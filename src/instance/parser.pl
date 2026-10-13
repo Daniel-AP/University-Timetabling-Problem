@@ -116,8 +116,8 @@ parseRecord(rooms, [Code, CapacityBytes, Type], _, [Code, Capacity, Type]) :-
 parseRecord(rooms, _, Line, _) :-
     throw(instanceParseError(Line, "Expected a nonempty room code, nonnegative capacity and a known room type")).
 
-parseRecord(teachers, [Code, Name, MaxBytes, AvailabilityBytes], _, [Code, Name, MaxSlots, Availability]) :-
-    Code = [_|_],
+parseRecord(teachers, [Teacher, Name, MaxBytes, AvailabilityBytes], _, [Teacher, Name, MaxSlots, Availability]) :-
+    Teacher = [_|_],
     Name = [_|_],
     parseNumber(MaxBytes, MaxSlots),
     parseAvailability(AvailabilityBytes, Availability),

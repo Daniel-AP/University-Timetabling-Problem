@@ -51,7 +51,7 @@ btSelectDegree([_|Sessions], PendingSessions, BestSession, BestDegree, SelectedS
 btSelectDemand([], BestSession, BestSession).
 
 btSelectDemand([Session|Sessions], BestSession, SelectedSession) :-
-    hasGreaterDemand(Session, BestSession),
+    isGreaterDemand(Session, BestSession),
     !,
     btSelectDemand(Sessions, Session, SelectedSession).
 

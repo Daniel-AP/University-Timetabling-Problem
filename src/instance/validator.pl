@@ -117,8 +117,8 @@ validateRecords(Section, [Record|Records], Instance, HasSingleDaySetting, HasSin
 validateRecord(rooms, record(Line, [Code, _, _]), instance(_, Rooms, _, _, _, _), _, _, Errors) :-
     validateDuplicate(rooms, Code, Line, Rooms, Errors).
 
-validateRecord(teachers, record(Line, [Code, _, _, Availability]), instance(Settings, _, Teachers, _, _, _), HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
-    validateDuplicate(teachers, Code, Line, Teachers, DuplicateErrors),
+validateRecord(teachers, record(Line, [Teacher, _, _, Availability]), instance(Settings, _, Teachers, _, _, _), HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
+    validateDuplicate(teachers, Teacher, Line, Teachers, DuplicateErrors),
     validateAvailability(Availability, Line, Settings, HasSingleDaySetting, HasSingleSlotSetting, RangeErrors),
     append(DuplicateErrors, RangeErrors, Errors).
 
@@ -166,8 +166,8 @@ findRecord(config, Key, [Record|_], Record) :-
 findRecord(rooms, Code, [Record|_], Record) :-
     Record = record(_, [Code, _, _]).
 
-findRecord(teachers, Code, [Record|_], Record) :-
-    Record = record(_, [Code, _, _, _]).
+findRecord(teachers, Teacher, [Record|_], Record) :-
+    Record = record(_, [Teacher, _, _, _]).
 
 findRecord(groups, groupKey(Course, Group), [Record|_], Record) :-
     Record = record(_, [Course, _, Group, _, _, _, _]).
@@ -197,8 +197,8 @@ validateDuplicate(rooms, Code, Line, Records, [Message]) :-
     append(Message1, ": Duplicate room code, first on line ", Message2),
     append(Message2, FirstLineDigits, Message).
 
-validateDuplicate(teachers, Code, Line, Records, [Message]) :-
-    findRecord(teachers, Code, Records, record(FirstLine, _)),
+validateDuplicate(teachers, Teacher, Line, Records, [Message]) :-
+    findRecord(teachers, Teacher, Records, record(FirstLine, _)),
     FirstLine < Line,
     !,
     number_codes(Line, LineDigits),
@@ -239,11 +239,11 @@ validateReference(rooms, Code, Line, _, [Message]) :-
     append(Message1, ": Unknown room ", Message2),
     append(Message2, Code, Message).
 
-validateReference(teachers, Code, Line, _, [Message]) :-
+validateReference(teachers, Teacher, Line, _, [Message]) :-
     number_codes(Line, LineDigits),
     append("Line ", LineDigits, Message1),
     append(Message1, ": Unknown teacher ", Message2),
-    append(Message2, Code, Message).
+    append(Message2, Teacher, Message).
 
 %% A relationship between a day and the allowed days
 
