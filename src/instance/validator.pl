@@ -2,12 +2,12 @@
 
 validateInstance(Instance, Errors) :-
     Instance = instance(Settings, Rooms, Teachers, Groups, Teaching, Restrictions),
-    validateSettings(Settings, DaysValid, SlotsValid, SettingsErrors),
-    validateRecords(rooms, Rooms, Instance, DaysValid, SlotsValid, RoomErrors),
-    validateRecords(teachers, Teachers, Instance, DaysValid, SlotsValid, TeacherErrors),
-    validateRecords(groups, Groups, Instance, DaysValid, SlotsValid, GroupErrors),
-    validateRecords(teaching, Teaching, Instance, DaysValid, SlotsValid, TeachingErrors),
-    validateRecords(restrictions, Restrictions, Instance, DaysValid, SlotsValid, RestrictionErrors),
+    validateSettings(Settings, HasSingleDaySetting, HasSingleSlotSetting, SettingsErrors),
+    validateRecords(rooms, Rooms, Instance, HasSingleDaySetting, HasSingleSlotSetting, RoomErrors),
+    validateRecords(teachers, Teachers, Instance, HasSingleDaySetting, HasSingleSlotSetting, TeacherErrors),
+    validateRecords(groups, Groups, Instance, HasSingleDaySetting, HasSingleSlotSetting, GroupErrors),
+    validateRecords(teaching, Teaching, Instance, HasSingleDaySetting, HasSingleSlotSetting, TeachingErrors),
+    validateRecords(restrictions, Restrictions, Instance, HasSingleDaySetting, HasSingleSlotSetting, RestrictionErrors),
     append(SettingsErrors, RoomErrors, Errors1),
     append(Errors1, TeacherErrors, Errors2),
     append(Errors2, GroupErrors, Errors3),
@@ -16,10 +16,10 @@ validateInstance(Instance, Errors) :-
 
 %% A relationship between settings and their errors
 
-validateSettings(Settings, DaysValid, SlotsValid, Errors) :-
+validateSettings(Settings, HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
     Keys = ["dias", "franjas", "inicio", "duracion_franja"],
     validateRequiredSettings(Keys, Settings, MissingErrors),
-    validateSettingRecords(Settings, Settings, 0, 0, DaysValid, SlotsValid, RecordErrors),
+    validateSettingRecords(Settings, Settings, 0, 0, HasSingleDaySetting, HasSingleSlotSetting, RecordErrors),
     append(MissingErrors, RecordErrors, Errors).
 
 %% A relationship between settings and their key counts
@@ -36,30 +36,30 @@ validateSettingRecords([], _, DaySettingCount, SlotSettingCount, false, false, [
     DaySettingCount =\= 1,
     SlotSettingCount =\= 1.
 
-validateSettingRecords([record(Line, ["dias", Days])|Records], Settings, DaySettingCount, SlotSettingCount, DaysValid, SlotsValid, Errors) :-
+validateSettingRecords([record(Line, ["dias", Days])|Records], Settings, DaySettingCount, SlotSettingCount, HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
     validateDuplicate(config, "dias", Line, Settings, DuplicateErrors),
     validateDays(Days, Line, DayErrors),
     append(DuplicateErrors, DayErrors, CurrentErrors),
     NextCount is DaySettingCount+1,
-    validateSettingRecords(Records, Settings, NextCount, SlotSettingCount, DaysValid, SlotsValid, RestErrors),
+    validateSettingRecords(Records, Settings, NextCount, SlotSettingCount, HasSingleDaySetting, HasSingleSlotSetting, RestErrors),
     append(CurrentErrors, RestErrors, Errors).
 
-validateSettingRecords([record(Line, ["franjas", _])|Records], Settings, DaySettingCount, SlotSettingCount, DaysValid, SlotsValid, Errors) :-
+validateSettingRecords([record(Line, ["franjas", _])|Records], Settings, DaySettingCount, SlotSettingCount, HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
     validateDuplicate(config, "franjas", Line, Settings, CurrentErrors),
     NextCount is SlotSettingCount+1,
-    validateSettingRecords(Records, Settings, DaySettingCount, NextCount, DaysValid, SlotsValid, RestErrors),
+    validateSettingRecords(Records, Settings, DaySettingCount, NextCount, HasSingleDaySetting, HasSingleSlotSetting, RestErrors),
     append(CurrentErrors, RestErrors, Errors).
 
-validateSettingRecords([record(Line, ["inicio", Time])|Records], Settings, DaySettingCount, SlotSettingCount, DaysValid, SlotsValid, Errors) :-
+validateSettingRecords([record(Line, ["inicio", Time])|Records], Settings, DaySettingCount, SlotSettingCount, HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
     validateDuplicate(config, "inicio", Line, Settings, DuplicateErrors),
     validateStartTime(Time, Line, TimeErrors),
     append(DuplicateErrors, TimeErrors, CurrentErrors),
-    validateSettingRecords(Records, Settings, DaySettingCount, SlotSettingCount, DaysValid, SlotsValid, RestErrors),
+    validateSettingRecords(Records, Settings, DaySettingCount, SlotSettingCount, HasSingleDaySetting, HasSingleSlotSetting, RestErrors),
     append(CurrentErrors, RestErrors, Errors).
 
-validateSettingRecords([record(Line, ["duracion_franja", _])|Records], Settings, DaySettingCount, SlotSettingCount, DaysValid, SlotsValid, Errors) :-
+validateSettingRecords([record(Line, ["duracion_franja", _])|Records], Settings, DaySettingCount, SlotSettingCount, HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
     validateDuplicate(config, "duracion_franja", Line, Settings, CurrentErrors),
-    validateSettingRecords(Records, Settings, DaySettingCount, SlotSettingCount, DaysValid, SlotsValid, RestErrors),
+    validateSettingRecords(Records, Settings, DaySettingCount, SlotSettingCount, HasSingleDaySetting, HasSingleSlotSetting, RestErrors),
     append(CurrentErrors, RestErrors, Errors).
 
 %% A relationship between configured days and their errors
@@ -107,9 +107,9 @@ validateStartTime(_, Line, [Message]) :-
 
 validateRecords(_, [], _, _, _, []).
 
-validateRecords(Section, [Record|Records], Instance, DaysValid, SlotsValid, Errors) :-
-    validateRecord(Section, Record, Instance, DaysValid, SlotsValid, CurrentErrors),
-    validateRecords(Section, Records, Instance, DaysValid, SlotsValid, RestErrors),
+validateRecords(Section, [Record|Records], Instance, HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
+    validateRecord(Section, Record, Instance, HasSingleDaySetting, HasSingleSlotSetting, CurrentErrors),
+    validateRecords(Section, Records, Instance, HasSingleDaySetting, HasSingleSlotSetting, RestErrors),
     append(CurrentErrors, RestErrors, Errors).
 
 %% A relationship between a record and its errors
@@ -117,15 +117,15 @@ validateRecords(Section, [Record|Records], Instance, DaysValid, SlotsValid, Erro
 validateRecord(rooms, record(Line, [Code, _, _]), instance(_, Rooms, _, _, _, _), _, _, Errors) :-
     validateDuplicate(rooms, Code, Line, Rooms, Errors).
 
-validateRecord(teachers, record(Line, [Code, _, _, Availability]), instance(Settings, _, Teachers, _, _, _), DaysValid, SlotsValid, Errors) :-
+validateRecord(teachers, record(Line, [Code, _, _, Availability]), instance(Settings, _, Teachers, _, _, _), HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
     validateDuplicate(teachers, Code, Line, Teachers, DuplicateErrors),
-    validateAvailability(Availability, Line, Settings, DaysValid, SlotsValid, RangeErrors),
+    validateAvailability(Availability, Line, Settings, HasSingleDaySetting, HasSingleSlotSetting, RangeErrors),
     append(DuplicateErrors, RangeErrors, Errors).
 
-validateRecord(groups, record(Line, [Course, _, Group, _, _, Duration, _]), instance(Settings, _, _, Groups, Teaching, _), _, SlotsValid, Errors) :-
+validateRecord(groups, record(Line, [Course, _, Group, _, _, Duration, _]), instance(Settings, _, _, Groups, Teaching, _), _, HasSingleSlotSetting, Errors) :-
     Key = groupKey(Course, Group),
     validateDuplicate(groups, Key, Line, Groups, DuplicateErrors),
-    validateDuration(Duration, Line, Settings, SlotsValid, DurationErrors),
+    validateDuration(Duration, Line, Settings, HasSingleSlotSetting, DurationErrors),
     validateGroupHasTeacher(Key, Line, Teaching, TeachingErrors),
     append(DuplicateErrors, DurationErrors, Errors1),
     append(Errors1, TeachingErrors, Errors).
@@ -140,9 +140,9 @@ validateRecord(restrictions, record(Line, ["aula_fija", Course, Group, Room]), i
     validateReference(rooms, Room, Line, Rooms, RoomErrors),
     append(GroupErrors, RoomErrors, Errors).
 
-validateRecord(restrictions, record(Line, ["prohibida", Course, Group, DaySlot]), instance(Settings, _, _, Groups, _, _), DaysValid, SlotsValid, Errors) :-
+validateRecord(restrictions, record(Line, ["prohibida", Course, Group, DaySlot]), instance(Settings, _, _, Groups, _, _), HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
     validateReference(groups, groupKey(Course, Group), Line, Groups, GroupErrors),
-    validateDaySlot(DaySlot, Line, Settings, DaysValid, SlotsValid, SlotErrors),
+    validateDaySlot(DaySlot, Line, Settings, HasSingleDaySetting, HasSingleSlotSetting, SlotErrors),
     append(GroupErrors, SlotErrors, Errors).
 
 validateRecord(restrictions, record(Line, ["excluyentes", Course, Group, OtherCourse, OtherGroup]), instance(_, _, _, Groups, _, _), _, _, Errors) :-
@@ -150,9 +150,9 @@ validateRecord(restrictions, record(Line, ["excluyentes", Course, Group, OtherCo
     validateReference(groups, groupKey(OtherCourse, OtherGroup), Line, Groups, OtherErrors),
     append(Errors1, OtherErrors, Errors).
 
-validateRecord(restrictions, record(Line, ["prefiere", Course, Group, DaySlot, _]), instance(Settings, _, _, Groups, _, _), DaysValid, SlotsValid, Errors) :-
+validateRecord(restrictions, record(Line, ["prefiere", Course, Group, DaySlot, _]), instance(Settings, _, _, Groups, _, _), HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
     validateReference(groups, groupKey(Course, Group), Line, Groups, GroupErrors),
-    validateDaySlot(DaySlot, Line, Settings, DaysValid, SlotsValid, SlotErrors),
+    validateDaySlot(DaySlot, Line, Settings, HasSingleDaySetting, HasSingleSlotSetting, SlotErrors),
     append(GroupErrors, SlotErrors, Errors).
 
 validateRecord(restrictions, record(Line, ["compacta", Course, Group, _]), instance(_, _, _, Groups, _, _), _, _, Errors) :-
@@ -285,9 +285,9 @@ validateSlot(_, Line, _, true, [Message]) :-
 
 %% A relationship between a day and slot number and their errors
 
-validateDaySlot(daySlot(Day, Slot), Line, Settings, DaysValid, SlotsValid, Errors) :-
-    validateDay(Day, Line, Settings, DaysValid, DayErrors),
-    validateSlot(Slot, Line, Settings, SlotsValid, SlotErrors),
+validateDaySlot(daySlot(Day, Slot), Line, Settings, HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
+    validateDay(Day, Line, Settings, HasSingleDaySetting, DayErrors),
+    validateSlot(Slot, Line, Settings, HasSingleSlotSetting, SlotErrors),
     append(DayErrors, SlotErrors, Errors).
 
 %% A relationship between availability ranges and their errors
@@ -296,16 +296,16 @@ validateAvailability(all, _, _, _, _, []).
 
 validateAvailability([], _, _, _, _, []).
 
-validateAvailability([Range|Ranges], Line, Settings, DaysValid, SlotsValid, Errors) :-
-    validateRange(Range, Line, Settings, DaysValid, SlotsValid, CurrentErrors),
-    validateAvailability(Ranges, Line, Settings, DaysValid, SlotsValid, RestErrors),
+validateAvailability([Range|Ranges], Line, Settings, HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
+    validateRange(Range, Line, Settings, HasSingleDaySetting, HasSingleSlotSetting, CurrentErrors),
+    validateAvailability(Ranges, Line, Settings, HasSingleDaySetting, HasSingleSlotSetting, RestErrors),
     append(CurrentErrors, RestErrors, Errors).
 
 %% A relationship between a range and its errors
 
-validateRange(dayRange(Start, End), Line, Settings, DaysValid, SlotsValid, Errors) :-
-    validateDaySlot(Start, Line, Settings, DaysValid, SlotsValid, StartErrors),
-    validateDaySlot(End, Line, Settings, DaysValid, SlotsValid, EndErrors),
+validateRange(dayRange(Start, End), Line, Settings, HasSingleDaySetting, HasSingleSlotSetting, Errors) :-
+    validateDaySlot(Start, Line, Settings, HasSingleDaySetting, HasSingleSlotSetting, StartErrors),
+    validateDaySlot(End, Line, Settings, HasSingleDaySetting, HasSingleSlotSetting, EndErrors),
     validateRangeOrder(dayRange(Start, End), Line, OrderErrors),
     append(StartErrors, EndErrors, EndpointErrors),
     append(EndpointErrors, OrderErrors, Errors).

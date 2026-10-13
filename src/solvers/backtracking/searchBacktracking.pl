@@ -28,10 +28,10 @@ btRunSearch(Config, Variant, Domains, RoomGroups, OriginalSessions, State, exhau
 %% A relationship between a branch and its complete schedules
 
 btSearchState(Config, _, _, _, _, btState([], AssignedSessions)) :-
-    Config = config(_, _, _, _, Optimize, _),
+    Config = config(_, _, _, _, IsOptimizationEnabled, _),
     assignmentsSchedule(AssignedSessions, Schedule),
     checkSchedule(Schedule),
-    btRecordSchedule(Optimize, Schedule).
+    btRecordSchedule(IsOptimizationEnabled, Schedule).
 
 btSearchState(Config, Variant, Domains, RoomGroups, OriginalSessions, State) :-
     State = btState([_|_], _),
@@ -47,11 +47,11 @@ btSearchState(Config, Variant, Domains, RoomGroups, OriginalSessions, State) :-
 
 btTryAssignment(Config, Variant, Domains, RoomGroups, OriginalSessions, State, Session, Slot) :-
     State = btState(_, AssignedSessions),
-    Config = config(_, _, _, _, Optimize, _),
+    Config = config(_, _, _, _, IsOptimizationEnabled, _),
     btCheckSessionOrder(Session, Slot, AssignedSessions),
     btAssignSession(State, Session, Slot, NextState),
     btCheckRoomAppearanceOrder(RoomGroups, OriginalSessions, NextState),
-    btBranchAllowed(Optimize, NextState),
+    btIsBranchAllowed(IsOptimizationEnabled, NextState),
     btSearchState(Config, Variant, Domains, RoomGroups, OriginalSessions, NextState).
 
 %% A relationship between a variant, a branch and its next session locations
@@ -73,12 +73,12 @@ btAssignSession(btState(PendingSessions, AssignedSessions), Session, Slot, btSta
 
 %% A relationship between optimization, a branch and a cost worth exploring
 
-btBranchAllowed(false, _).
+btIsBranchAllowed(false, _).
 
-btBranchAllowed(true, _) :-
+btIsBranchAllowed(true, _) :-
     btSearchControl(btControl(_, none), _).
 
-btBranchAllowed(true, State) :-
+btIsBranchAllowed(true, State) :-
     btSearchControl(btControl(_, best(_, Cost)), _),
     btCostBound(State, Bound),
     Bound < Cost.

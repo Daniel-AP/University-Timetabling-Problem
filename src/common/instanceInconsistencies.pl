@@ -29,7 +29,7 @@ instanceInconsistencies(Errors) :-
 groupInconsistency(Course, Group, Message) :-
     group(Course, Group, _, Enrolled, WeeklySessions, _, Requirement),
     WeeklySessions > 0,
-    \+ groupHasRoom(Enrolled, Requirement),
+    \+ hasGroupRoom(Enrolled, Requirement),
     append("Group ", Course, Message1),
     append(Message1, "/", Message2),
     append(Message2, Group, Message3),
@@ -38,7 +38,7 @@ groupInconsistency(Course, Group, Message) :-
 groupInconsistency(Course, Group, Message) :-
     group(Course, Group, _, Enrolled, WeeklySessions, _, Requirement),
     WeeklySessions > 0,
-    groupHasRoom(Enrolled, Requirement),
+    hasGroupRoom(Enrolled, Requirement),
     groupAllowedSlots(Course, Group, []),
     append("Group ", Course, Message1),
     append(Message1, "/", Message2),
@@ -67,10 +67,10 @@ groupInconsistency(Course, Group, Message) :-
 
 %% A relationship between group requirements and a suitable room
 
-groupHasRoom(Enrolled, Requirement) :-
+hasGroupRoom(Enrolled, Requirement) :-
     room(_, Capacity, Type),
     Capacity >= Enrolled,
-    roomTypeCompatible(Requirement, Type),
+    isRoomTypeCompatible(Requirement, Type),
     !.
 
 %% A relationship between a group and its allowed locations
@@ -82,7 +82,7 @@ groupAllowedSlots(Course, Group, Slots) :-
         slot(Room, Day, Start),
         (
             member(slot(Room, Day, Start), BaseSlots),
-            allowedSlot(Course, Group, slot(Room, Day, Start))
+            isAllowedSlot(Course, Group, slot(Room, Day, Start))
         ),
         Slots
     ).
@@ -135,7 +135,7 @@ teacherInconsistency(Teacher, Groups, Message) :-
 
 %% A relationship between a teacher and a group they teach
 
-teacherHasGroup(Teacher, Course, Group) :-
+hasTeacherGroup(Teacher, Course, Group) :-
     teaches(Course, Group, Teacher),
     !.
 
@@ -148,12 +148,12 @@ teacherRequiredSlots(Teacher, [[_, _, 0, _]|Groups], RequiredSlots) :-
 
 teacherRequiredSlots(Teacher, [[Course, Group, WeeklySessions, _]|Groups], RequiredSlots) :-
     WeeklySessions > 0,
-    \+ teacherHasGroup(Teacher, Course, Group),
+    \+ hasTeacherGroup(Teacher, Course, Group),
     teacherRequiredSlots(Teacher, Groups, RequiredSlots).
 
 teacherRequiredSlots(Teacher, [[Course, Group, WeeklySessions, Duration]|Groups], RequiredSlots) :-
     WeeklySessions > 0,
-    teacherHasGroup(Teacher, Course, Group),
+    hasTeacherGroup(Teacher, Course, Group),
     teacherRequiredSlots(Teacher, Groups, RestRequiredSlots),
     RequiredSlots is WeeklySessions*Duration+RestRequiredSlots.
 
@@ -165,7 +165,7 @@ teacherSlotCoverage(Teacher, Groups, Coverage) :-
         (
             member([Course, Group, WeeklySessions, Duration], Groups),
             WeeklySessions > 0,
-            teacherHasGroup(Teacher, Course, Group),
+            hasTeacherGroup(Teacher, Course, Group),
             groupAllowedSlots(Course, Group, Slots),
             member(slot(_, Day, Start), Slots),
             LastSlot is Start+Duration-1,

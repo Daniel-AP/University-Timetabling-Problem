@@ -18,7 +18,7 @@ fdCostBound(Model, Maps, Bound) :-
         Penalty,
         (
             preferredSlot(Course, Group, Day, Start, Weight),
-            fdCompleteGroup(Course, Group, PendingSessions),
+            fdIsGroupComplete(Course, Group, PendingSessions),
             preferenceCost(Course, Group, Day, Start, Weight, Assignments, Penalty)
         ),
         PreferenceCosts
@@ -27,7 +27,7 @@ fdCostBound(Model, Maps, Bound) :-
         Penalty,
         (
             compactGroup(Course, Group, Weight),
-            fdCompleteGroup(Course, Group, PendingSessions),
+            fdIsGroupComplete(Course, Group, PendingSessions),
             compactCost(Course, Group, Weight, Assignments, Penalty)
         ),
         CompactCosts
@@ -38,5 +38,5 @@ fdCostBound(Model, Maps, Bound) :-
 
 %% A relationship between a group and its lack of pending sessions
 
-fdCompleteGroup(Course, Group, PendingSessions) :-
+fdIsGroupComplete(Course, Group, PendingSessions) :-
     \+ member(session(Course, Group, _), PendingSessions).

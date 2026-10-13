@@ -53,11 +53,11 @@ possibleSlot(session(Course, Group, _), slot(Room, Day, Start)) :-
     ),
     room(Room, Capacity, Type),
     Capacity >= Enrolled,
-    roomTypeCompatible(Requirement, Type),
+    isRoomTypeCompatible(Requirement, Type),
     member(Day, Days),
     slotBetween(1, LastStart, Start),
     Start =< DailySlotCount,
-    groupAvailable(Availabilities, Day, Start).
+    isGroupAvailable(Availabilities, Day, Start).
 
 %% A relationship between a number range and its numbers in order
 
@@ -71,32 +71,32 @@ slotBetween(CurrentSlot, LastSlot, Slot) :-
 
 %% A relationship between a requirement and a compatible room type
 
-roomTypeCompatible("teoria", "teoria").
+isRoomTypeCompatible("teoria", "teoria").
 
-roomTypeCompatible("teoria", "mixta").
+isRoomTypeCompatible("teoria", "mixta").
 
-roomTypeCompatible("laboratorio", "laboratorio").
+isRoomTypeCompatible("laboratorio", "laboratorio").
 
-roomTypeCompatible("laboratorio", "mixta").
+isRoomTypeCompatible("laboratorio", "mixta").
 
-roomTypeCompatible("mixta", _).
+isRoomTypeCompatible("mixta", _).
 
 %% A relationship between group teachers and a start they can all use
 
-groupAvailable([], _, _).
+isGroupAvailable([], _, _).
 
-groupAvailable([Availability|Availabilities], Day, Start) :-
-    availableStart(Availability, Day, Start),
-    groupAvailable(Availabilities, Day, Start).
+isGroupAvailable([Availability|Availabilities], Day, Start) :-
+    isAvailableStart(Availability, Day, Start),
+    isGroupAvailable(Availabilities, Day, Start).
 
 %% A relationship between availability and a session start
 
-availableStart(all, _, _).
+isAvailableStart(all, _, _).
 
-availableStart([dayRange(daySlot(Day, FirstSlot), daySlot(Day, LastSlot))|_], Day, Start) :-
+isAvailableStart([dayRange(daySlot(Day, FirstSlot), daySlot(Day, LastSlot))|_], Day, Start) :-
     Start >= FirstSlot,
     Start =< LastSlot,
     !.
 
-availableStart([_|Ranges], Day, Start) :-
-    availableStart(Ranges, Day, Start).
+isAvailableStart([_|Ranges], Day, Start) :-
+    isAvailableStart(Ranges, Day, Start).

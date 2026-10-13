@@ -66,7 +66,7 @@ fdSelectDegree([_|Sessions], PendingSessions, BestSession, BestDegree, SelectedS
 fdSelectDemand([], BestSession, BestSession).
 
 fdSelectDemand([Session|Sessions], BestSession, SelectedSession) :-
-    greaterDemand(Session, BestSession),
+    hasGreaterDemand(Session, BestSession),
     !,
     fdSelectDemand(Sessions, Session, SelectedSession).
 

@@ -16,11 +16,11 @@ btCheckSessionPairOrder(session(Course, Group, _), _, session(Course, OtherGroup
 
 btCheckSessionPairOrder(session(Course, Group, Ordinal), Slot, session(Course, Group, OtherOrdinal), OtherSlot) :-
     Ordinal < OtherOrdinal,
-    btSlotBefore(Slot, OtherSlot).
+    btIsSlotBefore(Slot, OtherSlot).
 
 btCheckSessionPairOrder(session(Course, Group, Ordinal), Slot, session(Course, Group, OtherOrdinal), OtherSlot) :-
     Ordinal > OtherOrdinal,
-    btSlotBefore(OtherSlot, Slot).
+    btIsSlotBefore(OtherSlot, Slot).
 
 btCheckSessionPairOrder(session(Course, Group, Ordinal), slot(_, Day, Start), session(Course, Group, OtherOrdinal), slot(_, Day, Start)) :-
     Ordinal \= OtherOrdinal,
@@ -28,10 +28,10 @@ btCheckSessionPairOrder(session(Course, Group, Ordinal), slot(_, Day, Start), se
 
 %% A relationship between an earlier location and a later location
 
-btSlotBefore(slot(_, Day, Start), slot(_, Day, OtherStart)) :-
+btIsSlotBefore(slot(_, Day, Start), slot(_, Day, OtherStart)) :-
     Start < OtherStart.
 
-btSlotBefore(slot(_, Day, _), slot(_, OtherDay, _)) :-
+btIsSlotBefore(slot(_, Day, _), slot(_, OtherDay, _)) :-
     instanceSetting("dias", Days),
     append(_, [Day|LaterDays], Days),
     member(OtherDay, LaterDays).

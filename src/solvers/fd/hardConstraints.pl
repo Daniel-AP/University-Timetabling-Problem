@@ -26,7 +26,7 @@ fdConstrainSessionDomains([FdSession|Model], indexMaps(Rooms, Days)) :-
             member([TupleRoomIndex, TupleDayIndex, TupleStart], Tuples),
             fdIndexValue(Rooms, TupleRoomIndex, Room),
             fdIndexValue(Days, TupleDayIndex, Day),
-            allowedSlot(Course, Group, slot(Room, Day, TupleStart))
+            isAllowedSlot(Course, Group, slot(Room, Day, TupleStart))
         ),
         AllowedTuples
     ),

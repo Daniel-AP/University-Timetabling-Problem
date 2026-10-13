@@ -1,8 +1,8 @@
 %% A relationship between execution data and a prepared report
 
-prepareReport(Config, result(Status, schedule(Schedule)), Instance, Stats, Cost, _, reportOptions(IncludeRoomGrids), Date, Report) :-
-    Config = config(Input, _, Strategy, Heuristic, Optimize, _),
-    reportState(Optimize, result(Status, schedule(Schedule)), StateText, FinalText),
+prepareReport(Config, result(Status, schedule(Schedule)), Instance, Stats, Cost, _, reportOptions(IsRoomGridEnabled), Date, Report) :-
+    Config = config(Input, _, Strategy, Heuristic, IsOptimizationEnabled, _),
+    reportState(IsOptimizationEnabled, result(Status, schedule(Schedule)), StateText, FinalText),
     Header = header(Input, Strategy, Heuristic, StateText, Date),
     Instance = instance(Settings, _, _, _, _, _),
     member(record(_, ["dias", Days]), Settings),
@@ -11,7 +11,7 @@ prepareReport(Config, result(Status, schedule(Schedule)), Instance, Stats, Cost,
     reportDetail(Schedule, Days, Detail),
     reportGrids(GroupResources, Days, DailySlotCount, Schedule, GroupGrids),
     reportGrids(TeacherResources, Days, DailySlotCount, Schedule, TeacherGrids),
-    reportRoomGrids(IncludeRoomGrids, RoomResources, Days, DailySlotCount, Schedule, RoomGrids),
+    reportRoomGrids(IsRoomGridEnabled, RoomResources, Days, DailySlotCount, Schedule, RoomGrids),
     reportSessionTotals(Schedule, SessionCount, SessionSlotCount),
     reportGaps(GroupResources, Schedule, GroupGaps),
     reportGaps(TeacherResources, Schedule, TeacherGaps),
@@ -20,8 +20,8 @@ prepareReport(Config, result(Status, schedule(Schedule)), Instance, Stats, Cost,
     Report = report(Header, Detail, GroupGrids, TeacherGrids, RoomGrids, Conclusion).
 
 prepareReport(Config, result(Status, none), _, Stats, _, Diagnostic, _, Date, Report) :-
-    Config = config(Input, _, Strategy, Heuristic, Optimize, _),
-    reportState(Optimize, result(Status, none), StateText, FinalText),
+    Config = config(Input, _, Strategy, Heuristic, IsOptimizationEnabled, _),
+    reportState(IsOptimizationEnabled, result(Status, none), StateText, FinalText),
     Header = header(Input, Strategy, Heuristic, StateText, Date),
     reportNodeRate(Stats, NodeRate),
     Conclusion = diagnosticBlock(FinalText, Diagnostic, Stats, NodeRate),

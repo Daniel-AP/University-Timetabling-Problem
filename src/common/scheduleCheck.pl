@@ -30,7 +30,7 @@ checkAssignment(assignment(Course, Group, GivenTeachers, Room, Day, Start, Durat
     length(GivenTeachers, TeacherCount),
     room(Room, Capacity, Type),
     Capacity >= Enrolled,
-    roomTypeCompatible(Requirement, Type),
+    isRoomTypeCompatible(Requirement, Type),
     instanceSetting("dias", Days),
     member(Day, Days),
     instanceSetting("franjas", DailySlotCount),
@@ -46,8 +46,8 @@ checkAssignment(assignment(Course, Group, GivenTeachers, Room, Day, Start, Durat
         ),
         Availabilities
     ),
-    groupAvailable(Availabilities, Day, Start),
-    allowedSlot(Course, Group, slot(Room, Day, Start)).
+    isGroupAvailable(Availabilities, Day, Start),
+    isAllowedSlot(Course, Group, slot(Room, Day, Start)).
 
 %% A relationship between groups and their required session counts
 
@@ -69,44 +69,44 @@ checkAssignmentPairs([]).
 checkAssignmentPairs([Assignment|Assignments]) :-
     \+ (
         member(Other, Assignments),
-        assignmentConflict(Assignment, Other)
+        hasAssignmentConflict(Assignment, Other)
     ),
     checkAssignmentPairs(Assignments).
 
 %% A relationship between two assignments and a hard conflict
 
-assignmentConflict(First, Second) :-
+hasAssignmentConflict(First, Second) :-
     First = assignment(Course, Group, _, _, _, _, _),
     Second = assignment(Course, Group, _, _, _, _, _),
-    assignmentOverlap(First, Second).
+    hasAssignmentOverlap(First, Second).
 
-assignmentConflict(First, Second) :-
+hasAssignmentConflict(First, Second) :-
     First = assignment(_, _, _, Room, _, _, _),
     Second = assignment(_, _, _, Room, _, _, _),
-    assignmentOverlap(First, Second).
+    hasAssignmentOverlap(First, Second).
 
-assignmentConflict(First, Second) :-
+hasAssignmentConflict(First, Second) :-
     First = assignment(_, _, Teachers, _, _, _, _),
     Second = assignment(_, _, OtherTeachers, _, _, _, _),
     member(Teacher, Teachers),
     member(Teacher, OtherTeachers),
-    assignmentOverlap(First, Second).
+    hasAssignmentOverlap(First, Second).
 
-assignmentConflict(First, Second) :-
+hasAssignmentConflict(First, Second) :-
     First = assignment(Course, Group, _, _, _, _, _),
     Second = assignment(OtherCourse, OtherGroup, _, _, _, _, _),
     exclusiveGroups(Course, Group, OtherCourse, OtherGroup),
-    assignmentOverlap(First, Second).
+    hasAssignmentOverlap(First, Second).
 
-assignmentConflict(First, Second) :-
+hasAssignmentConflict(First, Second) :-
     First = assignment(Course, Group, _, _, _, _, _),
     Second = assignment(OtherCourse, OtherGroup, _, _, _, _, _),
     exclusiveGroups(OtherCourse, OtherGroup, Course, Group),
-    assignmentOverlap(First, Second).
+    hasAssignmentOverlap(First, Second).
 
 %% A relationship between two assignments and their shared time
 
-assignmentOverlap(assignment(_, _, _, _, Day, Start, Duration), assignment(_, _, _, _, Day, OtherStart, OtherDuration)) :-
+hasAssignmentOverlap(assignment(_, _, _, _, Day, Start, Duration), assignment(_, _, _, _, Day, OtherStart, OtherDuration)) :-
     Duration > 0,
     OtherDuration > 0,
     EndExclusive is Start+Duration,

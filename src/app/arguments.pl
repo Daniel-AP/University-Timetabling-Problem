@@ -59,17 +59,17 @@ parseOptions([Option|Options], _, _) :-
     !,
     throw(argumentError(Option, "Repeated heuristic option")).
 
-parseOptions([Option|Options], config(Input, Output, Strategy, _, Optimize, Limit), Config) :-
+parseOptions([Option|Options], config(Input, Output, Strategy, _, IsOptimizationEnabled, Limit), Config) :-
     atom(Option),
     atom_concat('--heuristica=', Heuristic, Option),
     member(Heuristic, [original, mrv, degree, demand, lcv]),
     !,
-    NextConfig = config(Input, Output, Strategy, Heuristic, Optimize, Limit),
+    NextConfig = config(Input, Output, Strategy, Heuristic, IsOptimizationEnabled, Limit),
     parseOptions(Options, NextConfig, Config).
 
-parseOptions(['--heuristica=ff'|Options], config(Input, Output, clpfd, _, Optimize, Limit), Config) :-
+parseOptions(['--heuristica=ff'|Options], config(Input, Output, clpfd, _, IsOptimizationEnabled, Limit), Config) :-
     !,
-    NextConfig = config(Input, Output, clpfd, ff, Optimize, Limit),
+    NextConfig = config(Input, Output, clpfd, ff, IsOptimizationEnabled, Limit),
     parseOptions(Options, NextConfig, Config).
 
 parseOptions([Option|_], _, _) :-
@@ -87,12 +87,12 @@ parseOptions([Option|Options], _, _) :-
     !,
     throw(argumentError(Option, "Repeated limit option")).
 
-parseOptions([Option|Options], config(Input, Output, Strategy, Heuristic, Optimize, _), Config) :-
+parseOptions([Option|Options], config(Input, Output, Strategy, Heuristic, IsOptimizationEnabled, _), Config) :-
     atom(Option),
     atom_concat('--limite=', Text, Option),
     !,
     parseLimit(Text, Limit),
-    NextConfig = config(Input, Output, Strategy, Heuristic, Optimize, Limit),
+    NextConfig = config(Input, Output, Strategy, Heuristic, IsOptimizationEnabled, Limit),
     parseOptions(Options, NextConfig, Config).
 
 parseOptions([Option|_], _, _) :-

@@ -6,7 +6,7 @@ btCostBound(btState(PendingSessions, AssignedSessions), Bound) :-
         Penalty,
         (
             preferredSlot(Course, Group, Day, Start, Weight),
-            btCompleteGroup(Course, Group, PendingSessions),
+            btIsGroupComplete(Course, Group, PendingSessions),
             preferenceCost(Course, Group, Day, Start, Weight, Assignments, Penalty)
         ),
         PreferenceCosts
@@ -15,7 +15,7 @@ btCostBound(btState(PendingSessions, AssignedSessions), Bound) :-
         Penalty,
         (
             compactGroup(Course, Group, Weight),
-            btCompleteGroup(Course, Group, PendingSessions),
+            btIsGroupComplete(Course, Group, PendingSessions),
             compactCost(Course, Group, Weight, Assignments, Penalty)
         ),
         CompactCosts
@@ -26,5 +26,5 @@ btCostBound(btState(PendingSessions, AssignedSessions), Bound) :-
 
 %% A relationship between a group and its lack of pending sessions
 
-btCompleteGroup(Course, Group, PendingSessions) :-
+btIsGroupComplete(Course, Group, PendingSessions) :-
     \+ member(session(Course, Group, _), PendingSessions).

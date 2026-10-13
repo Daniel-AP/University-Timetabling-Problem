@@ -35,10 +35,10 @@ fdRunSearch(Config, Model, Maps, exhausted) :-
 
 fdSearchModel(Config, Model, Maps) :-
     fdPendingSessions(Model, []),
-    Config = config(_, _, _, _, Optimize, _),
+    Config = config(_, _, _, _, IsOptimizationEnabled, _),
     fdAssignmentsSchedule(Model, Maps, Schedule),
     checkSchedule(Schedule),
-    fdRecordSchedule(Optimize, Schedule).
+    fdRecordSchedule(IsOptimizationEnabled, Schedule).
 
 fdSearchModel(Config, Model, Maps) :-
     fdPendingSessions(Model, [_|_]),
@@ -64,9 +64,9 @@ fdBranchSlots(Heuristic, Model, Maps, Session, Slots) :-
 %% A relationship between a candidate location and its next branch
 
 fdTryAssignment(Config, Model, Maps, Session, Slot) :-
-    Config = config(_, _, _, _, Optimize, _),
+    Config = config(_, _, _, _, IsOptimizationEnabled, _),
     fdAssignSession(Session, Slot, Model, Maps),
-    fdBranchAllowed(Optimize, Model, Maps),
+    fdIsBranchAllowed(IsOptimizationEnabled, Model, Maps),
     fdSearchModel(Config, Model, Maps).
 
 %% A relationship between a session location and its original model decisions
@@ -99,12 +99,12 @@ fdLabelDecision(Decision, Value) :-
 
 %% A relationship between optimization, a model and a cost worth exploring
 
-fdBranchAllowed(false, _, _).
+fdIsBranchAllowed(false, _, _).
 
-fdBranchAllowed(true, _, _) :-
+fdIsBranchAllowed(true, _, _) :-
     fdSearchControl(fdControl(_, none), _).
 
-fdBranchAllowed(true, Model, Maps) :-
+fdIsBranchAllowed(true, Model, Maps) :-
     fdSearchControl(fdControl(_, best(_, BestCost)), _),
     fdCostBound(Model, Maps, Bound),
     Bound < BestCost.

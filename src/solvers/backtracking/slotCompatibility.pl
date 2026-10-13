@@ -1,13 +1,13 @@
 %% A relationship between a location and the assignments it can join
 
-btCompatibleSlot(Session, Slot, AssignedSessions) :-
+btCheckCompatibleSlot(Session, Slot, AssignedSessions) :-
     Session = session(Course, Group, _),
-    allowedSlot(Course, Group, Slot),
+    isAllowedSlot(Course, Group, Slot),
     sessionAssignment(Session, Slot, Assignment),
     assignmentsSchedule(AssignedSessions, Assignments),
     \+ (
         member(Other, Assignments),
-        assignmentConflict(Assignment, Other)
+        hasAssignmentConflict(Assignment, Other)
     ),
     Assignment = assignment(_, _, Teachers, _, _, _, _),
     findall(
@@ -25,7 +25,7 @@ btCompatibleSlot(Session, Slot, AssignedSessions) :-
 btCompatibleSlots(_, [], _, []).
 
 btCompatibleSlots(Session, [Slot|Slots], AssignedSessions, CompatibleSlots) :-
-    btCompatibleSlot(Session, Slot, AssignedSessions),
+    btCheckCompatibleSlot(Session, Slot, AssignedSessions),
     !,
     CompatibleSlots = [Slot|RestCompatibleSlots],
     btCompatibleSlots(Session, Slots, AssignedSessions, RestCompatibleSlots).
