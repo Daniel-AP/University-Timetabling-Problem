@@ -1,0 +1,31 @@
+# Valid syntax with independent coherence errors across all sections
+# Expected: all coherence errors in the invalid-instance report, without search
+
+#:CONFIG
+dias;L,L
+franjas;4
+inicio;25:00
+
+#:AULA
+R1;30;teoria
+R1;25;teoria
+
+#:PROFESOR
+T1;Teacher One;4;L0-L5,M2-M1
+T1;Teacher Duplicate;4;
+
+#:CURSO
+C1;Course One;G1;20;1;5;teoria
+C1;Course Duplicate;G1;20;1;1;teoria
+C2;Course Two;G1;20;1;1;teoria
+
+#:IMPARTE
+C1;G1;T1
+C1;G1;Missing
+Unknown;G1;T1
+
+#:RESTRICCION
+aula_fija;C1;G1;Missing
+prohibida;C1;G1;M5
+prefiere;Unknown;G1;L1;2
+compacta;C2;G1;1

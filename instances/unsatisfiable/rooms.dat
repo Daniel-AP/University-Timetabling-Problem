@@ -1,0 +1,28 @@
+# Every group fits individually, but three sessions require two room slots
+# Expected: no solution after search, with an implicit-constraint diagnostic
+
+#:CONFIG
+dias;L
+franjas;2
+inicio;07:00
+duracion_franja;60
+
+#:AULA
+R1;30;teoria
+
+#:PROFESOR
+T1;Teacher One;1;
+T2;Teacher Two;1;
+T3;Teacher Three;1;
+
+#:CURSO
+C1;Course One;G1;20;1;1;teoria
+C2;Course Two;G1;20;1;1;teoria
+C3;Course Three;G1;20;1;1;teoria
+
+#:IMPARTE
+C1;G1;T1
+C2;G1;T2
+C3;G1;T3
+
+#:RESTRICCION

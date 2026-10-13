@@ -1,0 +1,22 @@
+# Three two-slot sessions exceed both the day capacity and the teacher's limit
+# Expected: construction errors before search, reported in the terminal
+
+#:CONFIG
+dias;L
+franjas;4
+inicio;07:00
+duracion_franja;60
+
+#:AULA
+R1;30;teoria
+
+#:PROFESOR
+T1;Teacher One;4;
+
+#:CURSO
+C1;Course One;G1;20;3;2;teoria
+
+#:IMPARTE
+C1;G1;T1
+
+#:RESTRICCION

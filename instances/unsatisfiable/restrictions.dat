@@ -1,0 +1,29 @@
+# Separate rooms and teachers allow simultaneous sessions until exclusivity is imposed
+# Expected: no solution; the excluyentes declaration is the first blocking restriction
+
+#:CONFIG
+dias;L
+franjas;2
+inicio;07:00
+duracion_franja;60
+
+#:AULA
+R1;30;teoria
+R2;30;teoria
+
+#:PROFESOR
+T1;Teacher One;2;
+T2;Teacher Two;2;
+
+#:CURSO
+C1;Course One;G1;20;1;2;teoria
+C2;Course Two;G1;20;1;2;teoria
+
+#:IMPARTE
+C1;G1;T1
+C2;G1;T2
+
+#:RESTRICCION
+aula_fija;C1;G1;R1
+aula_fija;C2;G1;R2
+excluyentes;C1;G1;C2;G1

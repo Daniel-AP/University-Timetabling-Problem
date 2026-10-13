@@ -1,0 +1,101 @@
+# Eighty sessions with shared teachers, multiple room types and room symmetries
+# Expected: eighty sessions and one hundred sixty occupied session slots
+# Daily availability keeps the large workload practical for repeated checks
+
+#:CONFIG
+dias;L,M,X,J,V
+franjas;9
+inicio;07:00
+duracion_franja;60
+
+#:AULA
+R1;50;teoria
+R2;50;teoria
+R3;35;teoria
+R4;35;teoria
+LAB1;25;laboratorio
+LAB2;25;laboratorio
+MIX1;40;mixta
+MIX2;40;mixta
+
+#:PROFESOR
+T01;Teacher 01;8;L1-L9
+T02;Teacher 02;8;L1-L9
+T03;Teacher 03;8;L1-L9
+T04;Teacher 04;8;L1-L9
+T05;Teacher 05;8;M1-M9
+T06;Teacher 06;8;M1-M9
+T07;Teacher 07;8;M1-M9
+T08;Teacher 08;8;M1-M9
+T09;Teacher 09;8;X1-X9
+T10;Teacher 10;8;X1-X9
+T11;Teacher 11;8;X1-X9
+T12;Teacher 12;8;X1-X9
+T13;Teacher 13;8;J1-J9
+T14;Teacher 14;8;J1-J9
+T15;Teacher 15;8;J1-J9
+T16;Teacher 16;8;J1-J9
+T17;Teacher 17;8;V1-V9
+T18;Teacher 18;8;V1-V9
+T19;Teacher 19;8;V1-V9
+T20;Teacher 20;8;V1-V9
+T21;Shared Teacher One;16;L1-L9,M1-M9
+T22;Shared Teacher Two;16;J1-J9,V1-V9
+
+#:CURSO
+C01;Course 01;G1;35;4;2;teoria
+C02;Course 02;G1;45;4;2;teoria
+C03;Course 03;G1;40;4;2;mixta
+C04;Course 04;G1;25;4;2;laboratorio
+C05;Course 05;G1;35;4;2;teoria
+C06;Course 06;G1;45;4;2;teoria
+C07;Course 07;G1;40;4;2;mixta
+C08;Course 08;G1;25;4;2;laboratorio
+C09;Course 09;G1;35;4;2;teoria
+C10;Course 10;G1;45;4;2;teoria
+C11;Course 11;G1;40;4;2;mixta
+C12;Course 12;G1;25;4;2;laboratorio
+C13;Course 13;G1;35;4;2;teoria
+C14;Course 14;G1;45;4;2;teoria
+C15;Course 15;G1;40;4;2;mixta
+C16;Course 16;G1;25;4;2;laboratorio
+C17;Course 17;G1;35;4;2;teoria
+C18;Course 18;G1;45;4;2;teoria
+C19;Course 19;G1;40;4;2;mixta
+C20;Course 20;G1;25;4;2;laboratorio
+
+#:IMPARTE
+C01;G1;T01
+C02;G1;T02
+C03;G1;T03
+C04;G1;T04
+C05;G1;T05
+C06;G1;T06
+C07;G1;T07
+C08;G1;T08
+C09;G1;T09
+C10;G1;T10
+C11;G1;T11
+C12;G1;T12
+C13;G1;T13
+C14;G1;T14
+C15;G1;T15
+C16;G1;T16
+C17;G1;T17
+C18;G1;T18
+C19;G1;T19
+C20;G1;T20
+C01;G1;T21
+C05;G1;T21
+C13;G1;T22
+C17;G1;T22
+
+#:RESTRICCION
+aula_fija;C04;G1;LAB1
+aula_fija;C08;G1;LAB2
+prohibida;C01;G1;L5
+prohibida;C11;G1;X5
+prefiere;C01;G1;L3;2
+prefiere;C16;G1;J1;2
+compacta;C01;G1;1
+compacta;C16;G1;1

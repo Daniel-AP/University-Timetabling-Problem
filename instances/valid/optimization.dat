@@ -1,0 +1,25 @@
+# Preferences compete with gap penalties
+# Expected: first original-order schedule costs six; optimal cost is five
+
+#:CONFIG
+dias;L
+franjas;5
+inicio;07:00
+duracion_franja;60
+
+#:AULA
+R1;30;teoria
+
+#:PROFESOR
+T1;Teacher One;2;L1-L1,L3-L3,L5-L5
+
+#:CURSO
+C1;Optimization course;G1;20;2;1;teoria
+
+#:IMPARTE
+C1;G1;T1
+
+#:RESTRICCION
+prefiere;C1;G1;L5;4
+prefiere;C1;G1;L1;3
+compacta;C1;G1;2

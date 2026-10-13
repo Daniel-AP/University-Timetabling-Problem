@@ -1,0 +1,43 @@
+# Hard constraints, shared teachers, UTF-8 identifiers and unordered sections
+# Expected: five sessions, eight occupied slots and optimal cost zero
+
+#:RESTRICCION
+aula_fija;C2;G1;LAB1
+prohibida;C1;G1;L2
+excluyentes;C4;G1;C1;G1
+prefiere;C1;G1;M1;2
+prefiere;C1;G1;L3;2
+prefiere;C-Á;G1;L1;1
+compacta;C1;G1;2
+
+#:CURSO
+ C1 ; Theory course ; G1 ; 30 ; 2 ; 2 ; teoria
+C2;Laboratory course;G1;20;1;2;laboratorio
+C-Á;Applied mathematics;G1;25;1;1;mixta
+C4;General course;G1;10;1;1;teoria
+
+#:AULA
+R1;30;teoria
+R2;30;teoria
+LAB1;20;laboratorio
+MIX1;25;mixta
+
+#:PROFESOR
+T1;Teacher One;5;L1-L3,M1-M3
+T2;Teacher Two;2;L3-L3,X1-X1
+T-É;José Núñez;2;L3-L3
+T4;Teacher Four;1;
+
+#:IMPARTE
+C1;G1;T1
+C2;G1;T2
+C2;G1;T2
+C2;G1;T-É
+C-Á;G1;T1
+C4;G1;T4
+
+#:CONFIG
+dias;M,L,X
+franjas;4
+inicio;07:00
+duracion_franja;60
