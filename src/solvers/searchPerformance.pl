@@ -16,3 +16,11 @@ finishMeasurement(Nodes, Backtracks, searchStats(Nodes, Backtracks, CpuTime, Wal
 
 searchNodeRate(searchStats(Nodes, _, CpuTime, _), Rate) :-
     Rate is Nodes/CpuTime.
+
+%% A relationship between measured search intervals and their totals
+
+addSearchStats(searchStats(FirstNodes, FirstBacktracks, FirstCpuTime, FirstWallTime), searchStats(SecondNodes, SecondBacktracks, SecondCpuTime, SecondWallTime), searchStats(Nodes, Backtracks, CpuTime, WallTime)) :-
+    Nodes is FirstNodes+SecondNodes,
+    Backtracks is FirstBacktracks+SecondBacktracks,
+    CpuTime is FirstCpuTime+SecondCpuTime,
+    WallTime is FirstWallTime+SecondWallTime.

@@ -1,56 +1,67 @@
 %% A relationship between program arguments and their configuration
 
-parseArguments([Input, _, _|_], _) :-
+parseArguments(Arguments, Config) :-
+    parseArguments(Arguments, Config, _).
+
+%% A relationship between program arguments, their configuration and output options
+
+parseArguments([Input, _, _|_], _, _) :-
     \+ atom(Input),
     !,
     throw(argumentError(Input, "Expected a nonempty input path")).
 
-parseArguments(['', _, _|_], _) :-
+parseArguments(['', _, _|_], _, _) :-
     !,
     throw(argumentError('', "Expected a nonempty input path")).
 
-parseArguments([_, Output, _|_], _) :-
+parseArguments([_, Output, _|_], _, _) :-
     \+ atom(Output),
     !,
     throw(argumentError(Output, "Expected a nonempty output path")).
 
-parseArguments([_, '', _|_], _) :-
+parseArguments([_, '', _|_], _, _) :-
     !,
     throw(argumentError('', "Expected a nonempty output path")).
 
-parseArguments([_, _, Strategy|_], _) :-
+parseArguments([_, _, Strategy|_], _, _) :-
     \+ atom(Strategy),
     !,
     throw(argumentError(Strategy, "Expected bt or clpfd")).
 
-parseArguments([_, _, Strategy|_], _) :-
+parseArguments([_, _, Strategy|_], _, _) :-
     \+ member(Strategy, [bt, clpfd]),
     !,
     throw(argumentError(Strategy, "Expected bt or clpfd")).
 
-parseArguments([Input, Output, Strategy|Options], Config) :-
+parseArguments([Input, Output, Strategy|Options], Config, ExecutionOptions) :-
     !,
     InitialConfig = config(Input, Output, Strategy, original, false, none),
-    parseOptions(Options, InitialConfig, Config).
+    InitialExecutionOptions = executionOptions(none, false),
+    parseOptions(Options, InitialConfig, InitialExecutionOptions, Config, ExecutionOptions).
 
-parseArguments(Arguments, _) :-
+parseArguments(Arguments, _, _) :-
     throw(argumentError(Arguments, "Expected input path, output path and strategy")).
 
 %% A relationship between program options and configuration fields
 
-parseOptions([], Config, Config).
+parseOptions(Options, InitialConfig, Config) :-
+    parseOptions(Options, InitialConfig, executionOptions(none, false), Config, _).
 
-parseOptions(['--optimizar'|Options], _, _) :-
+%% A relationship between program options, configuration fields and output options
+
+parseOptions([], Config, ExecutionOptions, Config, ExecutionOptions).
+
+parseOptions(['--optimizar'|Options], _, _, _, _) :-
     member('--optimizar', Options),
     !,
     throw(argumentError('--optimizar', "Repeated optimization option")).
 
-parseOptions(['--optimizar'|Options], config(Input, Output, Strategy, Heuristic, _, Limit), Config) :-
+parseOptions(['--optimizar'|Options], config(Input, Output, Strategy, Heuristic, _, Limit), ExecutionOptions, Config, FinalExecutionOptions) :-
     !,
     NextConfig = config(Input, Output, Strategy, Heuristic, true, Limit),
-    parseOptions(Options, NextConfig, Config).
+    parseOptions(Options, NextConfig, ExecutionOptions, Config, FinalExecutionOptions).
 
-parseOptions([Option|Options], _, _) :-
+parseOptions([Option|Options], _, _, _, _) :-
     atom(Option),
     atom_concat('--heuristica=', _, Option),
     member(Other, Options),
@@ -59,26 +70,26 @@ parseOptions([Option|Options], _, _) :-
     !,
     throw(argumentError(Option, "Repeated heuristic option")).
 
-parseOptions([Option|Options], config(Input, Output, Strategy, _, IsOptimizationEnabled, Limit), Config) :-
+parseOptions([Option|Options], config(Input, Output, Strategy, _, IsOptimizationEnabled, Limit), ExecutionOptions, Config, FinalExecutionOptions) :-
     atom(Option),
     atom_concat('--heuristica=', Heuristic, Option),
     member(Heuristic, [original, mrv, degree, demand, lcv]),
     !,
     NextConfig = config(Input, Output, Strategy, Heuristic, IsOptimizationEnabled, Limit),
-    parseOptions(Options, NextConfig, Config).
+    parseOptions(Options, NextConfig, ExecutionOptions, Config, FinalExecutionOptions).
 
-parseOptions(['--heuristica=ff'|Options], config(Input, Output, clpfd, _, IsOptimizationEnabled, Limit), Config) :-
+parseOptions(['--heuristica=ff'|Options], config(Input, Output, clpfd, _, IsOptimizationEnabled, Limit), ExecutionOptions, Config, FinalExecutionOptions) :-
     !,
     NextConfig = config(Input, Output, clpfd, ff, IsOptimizationEnabled, Limit),
-    parseOptions(Options, NextConfig, Config).
+    parseOptions(Options, NextConfig, ExecutionOptions, Config, FinalExecutionOptions).
 
-parseOptions([Option|_], _, _) :-
+parseOptions([Option|_], _, _, _, _) :-
     atom(Option),
     atom_concat('--heuristica=', _, Option),
     !,
     throw(argumentError(Option, "Unknown heuristic or incompatible strategy")).
 
-parseOptions([Option|Options], _, _) :-
+parseOptions([Option|Options], _, _, _, _) :-
     atom(Option),
     atom_concat('--limite=', _, Option),
     member(Other, Options),
@@ -87,15 +98,50 @@ parseOptions([Option|Options], _, _) :-
     !,
     throw(argumentError(Option, "Repeated limit option")).
 
-parseOptions([Option|Options], config(Input, Output, Strategy, Heuristic, IsOptimizationEnabled, _), Config) :-
+parseOptions([Option|Options], config(Input, Output, Strategy, Heuristic, IsOptimizationEnabled, _), ExecutionOptions, Config, FinalExecutionOptions) :-
     atom(Option),
     atom_concat('--limite=', Text, Option),
     !,
     parseLimit(Text, Limit),
     NextConfig = config(Input, Output, Strategy, Heuristic, IsOptimizationEnabled, Limit),
-    parseOptions(Options, NextConfig, Config).
+    parseOptions(Options, NextConfig, ExecutionOptions, Config, FinalExecutionOptions).
 
-parseOptions([Option|_], _, _) :-
+parseOptions(['--horarios-por-aula'|Options], _, _, _, _) :-
+    member('--horarios-por-aula', Options),
+    !,
+    throw(argumentError('--horarios-por-aula', "Repeated room grid option")).
+
+parseOptions(['--horarios-por-aula'|Options], InitialConfig, executionOptions(PrologOutput, _), Config, ExecutionOptions) :-
+    !,
+    parseOptions(Options, InitialConfig, executionOptions(PrologOutput, true), Config, ExecutionOptions).
+
+parseOptions([Option|Options], _, _, _, _) :-
+    atom(Option),
+    atom_concat('--exportar-prolog=', _, Option),
+    member(Other, Options),
+    atom(Other),
+    atom_concat('--exportar-prolog=', _, Other),
+    !,
+    throw(argumentError(Option, "Repeated Prolog export option")).
+
+parseOptions(['--exportar-prolog='|_], _, _, _, _) :-
+    !,
+    throw(argumentError('--exportar-prolog=', "Expected a nonempty Prolog output path")).
+
+parseOptions([Option|_], config(Input, Output, _, _, _, _), _, _, _) :-
+    atom(Option),
+    atom_concat('--exportar-prolog=', PrologPath, Option),
+    member(PrologPath, [Input, Output]),
+    !,
+    throw(argumentError(Option, "Prolog output must differ from input and report paths")).
+
+parseOptions([Option|Options], InitialConfig, executionOptions(_, IsRoomGridEnabled), Config, ExecutionOptions) :-
+    atom(Option),
+    atom_concat('--exportar-prolog=', PrologPath, Option),
+    !,
+    parseOptions(Options, InitialConfig, executionOptions(prologFile(PrologPath), IsRoomGridEnabled), Config, ExecutionOptions).
+
+parseOptions([Option|_], _, _, _, _) :-
     throw(argumentError(Option, "Unknown option")).
 
 %% A relationship between number text and a search limit

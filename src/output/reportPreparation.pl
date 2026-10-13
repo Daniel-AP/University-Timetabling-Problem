@@ -31,9 +31,9 @@ prepareReport(Config, result(Status, none), _, Stats, _, Diagnostic, _, Date, Re
 
 reportState(false, result(found, schedule(_)), "SOLUTION FOUND", "First valid schedule. Best cost not proved").
 
-reportState(true, result(found, schedule(_)), "SOLUTION FOUND", "Best schedule. Search finished").
+reportState(true, result(found, schedule(_)), "SOLUTION FOUND", "Optimal schedule. Search finished").
 
-reportState(_, result(noSolution, none), "NO SOLUTION", "No solution. Search finished").
+reportState(_, result(noSolution, none), "NO SOLUTION", "No solution. Resolution finished").
 
 reportState(_, result(limitReached, schedule(_)), "LIMIT REACHED", "Limit reached. Best schedule found. Best cost not proved").
 

@@ -19,9 +19,9 @@ fdConstrainSessionPairOrder(fdSession(session(Course, Group, _), _, _, _, _), fd
 fdConstrainSessionPairOrder(fdSession(session(Course, Group, _), _, DayIndex, Start, _), fdSession(session(Course, Group, _), _, OtherDayIndex, OtherStart, _)) :-
     group(Course, Group, _, _, _, Duration, _),
     Duration > 0,
-    (DayIndex #< OtherDayIndex) #\/
-    ((DayIndex #= OtherDayIndex) #/\
-    (Start #< OtherStart)).
+    IsEarlierDay #<=> (DayIndex #< OtherDayIndex),
+    IsSameDayEarlierStart #<=> ((DayIndex #= OtherDayIndex) #/\ (Start #< OtherStart)),
+    fd_all_different([IsEarlierDay, IsSameDayEarlierStart]).
 
 fdConstrainSessionPairOrder(fdSession(session(Course, Group, _), _, DayIndex, Start, _), fdSession(session(Course, Group, _), _, OtherDayIndex, OtherStart, _)) :-
     group(Course, Group, _, _, _, 0, _),
