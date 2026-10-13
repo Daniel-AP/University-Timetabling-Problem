@@ -130,7 +130,7 @@ teacherInconsistency(Teacher, Groups, Message) :-
     append("Teacher ", Teacher, Message1),
     append(Message1, ": Required slots ", Message2),
     append(Message2, RequiredDigits, Message3),
-    append(Message3, " exceed available slots ", Message4),
+    append(Message3, " exceed possible slots after applying room, availability and group restrictions: ", Message4),
     append(Message4, CoverageDigits, Message).
 
 %% A relationship between a teacher and a group they teach
