@@ -35,6 +35,8 @@ reportState(true, result(found, schedule(_)), "SOLUTION FOUND", "Optimal schedul
 
 reportState(_, result(noSolution, none), "NO SOLUTION", "No solution. Resolution finished").
 
+reportState(_, result(invalidInstance, none), "INVALID INSTANCE", "Invalid instance. Search not started").
+
 reportState(_, result(limitReached, schedule(_)), "LIMIT REACHED", "Limit reached. Best schedule found. Best cost not proved").
 
 reportState(_, result(limitReached, none), "LIMIT REACHED", "Limit reached. No schedule found. A solution may exist").

@@ -35,9 +35,15 @@ runExecution(Config, executionOptions(PrologOutput, IsRoomGridEnabled), ExitCode
     Config = config(Input, Output, _, _, _, _),
     startMeasurement,
     readInstance(Input, Bytes),
-    parseInstance(Bytes, Instance),
-    validateInstance(Instance, ValidationErrors),
-    checkInstanceErrors(Input, ValidationErrors),
+    catch(
+        (
+            parseInstance(Bytes, Instance),
+            validateInstance(Instance, ValidationErrors),
+            checkInstanceErrors(Input, ValidationErrors)
+        ),
+        Error,
+        writeInvalidInstanceReport(Config, Error)
+    ),
     registerInstance(Instance),
     searchSpaceSize(Size),
     sessionCount(TotalSessions),
@@ -62,6 +68,34 @@ checkInstanceErrors(_, []).
 checkInstanceErrors(Input, [Error|Errors]) :-
     finishMeasurement(0, 0, Stats),
     throw(instanceErrors(Input, [Error|Errors], Stats)).
+
+%% A relationship between invalid instance errors and their written report
+
+writeInvalidInstanceReport(Config, instanceParseError(Line, Cause)) :-
+    Config = config(Input, _, _, _, _, _),
+    finishMeasurement(0, 0, Stats),
+    number_codes(Line, LineDigits),
+    append("Line ", LineDigits, Message1),
+    append(Message1, ": ", Message2),
+    append(Message2, Cause, Message),
+    writeInvalidInstanceReport(Config, instanceErrors(Input, [Message], Stats)).
+
+writeInvalidInstanceReport(Config, instanceErrors(Input, Errors, Stats)) :-
+    Config = config(_, Output, _, _, _, _),
+    executionDate(Date),
+    prepareReport(Config, result(invalidInstance, none), none, Stats, unavailable, Errors, reportOptions(false), Date, Report),
+    catch(
+        writeReport(Output, Report),
+        WriteError,
+        (
+            writeExecutionError([Input], instanceErrors(Input, Errors, Stats)),
+            throw(WriteError)
+        )
+    ),
+    throw(instanceErrors(Input, Errors, Stats)).
+
+writeInvalidInstanceReport(_, Error) :-
+    throw(Error).
 
 %% A relationship between a search result and its output data
 
