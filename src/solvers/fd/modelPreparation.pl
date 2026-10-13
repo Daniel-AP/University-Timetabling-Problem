@@ -3,6 +3,12 @@
 fdPrepareModel(Model, Variables, Maps) :-
     findall(Room, room(Room, _, _), Rooms),
     instanceSetting("dias", Days),
+    length(Rooms, RoomCount),
+    length(Days, DayCount),
+    instanceSetting("franjas", DailySlotCount),
+    fd_vector_max(CurrentVectorMax),
+    RequiredVectorMax is max(CurrentVectorMax, max(RoomCount, max(DayCount, DailySlotCount))),
+    fd_set_vector_max(RequiredVectorMax),
     Maps = indexMaps(Rooms, Days),
     sessions(Sessions),
     fdPrepareSessions(Sessions, Maps, Model, Variables).
