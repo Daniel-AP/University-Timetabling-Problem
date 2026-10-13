@@ -1,0 +1,532 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noshorthands]{babel}
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{placeins}
+\usepackage[labelsep=period]{caption}
+\usepackage{indentfirst}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{textcomp}
+\usepackage[hidelinks]{hyperref}
+
+\addto\captionsspanish{\renewcommand{\tablename}{Tabla}}
+
+\pgfplotsset{compat=1.18}
+\graphicspath{{./}{docs/}{docs/report/}}
+\lstset{
+    basicstyle=\small\ttfamily,
+    backgroundcolor=\color{black!25},
+    rulecolor=\color{black},
+    frame=single,
+    framerule=0.4pt,
+    framesep=3pt,
+    columns=fullflexible,
+    keepspaces=true,
+    showstringspaces=false,
+    breaklines=true,
+    upquote=true,
+    aboveskip=0.5\baselineskip,
+    belowskip=0.5\baselineskip
+}
+\setlength{\parindent}{17pt}
+\setlength{\parskip}{0pt plus 1pt}
+\setlength{\emergencystretch}{2em}
+\raggedbottom
+
+\pgfplotstableread[col sep=space]{
+Config CPU N B R S E Cost
+BT-básico 0.081 1458 1452 18000.0 1.0000 0.0000 2
+BT-original 0.002 6 0 3000.0 40.5000 99.5885 2
+BT-MRV 0.005 6 0 1200.0 16.2000 99.5885 2
+BT-grado 0.003 6 0 2000.0 27.0000 99.5885 2
+BT-demanda 0.002 6 0 3000.0 40.5000 99.5885 2
+BT-LCV 0.017 14 8 823.5 4.7647 99.0398 3
+FD-original 0.002 5 0 2500.0 40.5000 99.6571 2
+FD-MRV 0.003 5 0 1666.7 27.0000 99.6571 2
+FD-grado 0.002 5 0 2500.0 40.5000 99.6571 2
+FD-demanda 0.002 5 0 2500.0 40.5000 99.6571 2
+FD-LCV 0.004 5 0 1250.0 20.2500 99.6571 2
+}\comparisonData
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{2.5cm}
+    \IfFileExists{logo_tec.png}{
+        \includegraphics[width=0.44\textwidth]{logo_tec.png}\par
+    }{
+        {\Large Instituto Tecnológico de Costa Rica\par}
+    }
+    \vspace{1.5cm}
+    {\Large\bfseries Informe técnico\par}
+    \vspace{0.65cm}
+    {\large Asignación de Horarios Universitarios\\con GNU Prolog\par}
+    \vspace{0.8cm}
+    {\large Lenguajes de Programación\par}
+    \vspace{1.1cm}
+    {\large Estudiante\par}
+    \vspace{0.15cm}
+    {\large Daniel Araya Pérez\\Carné 2025078995\par}
+    \vspace{1.1cm}
+    {\large Profesor\par}
+    \vspace{0.15cm}
+    {\large Eddy Ramírez Jiménez\par}
+    \vfill
+    \vspace*{1.5cm}
+\end{titlepage}
+
+\section{Modelo y representación}
+
+El programa asigna cada sesión de un grupo a un aula, un día y una franja inicial. Una sesión de duración $d_c$ ocupa $d_c$ franjas seguidas y debe terminar dentro del día. Para una duración positiva, sus posibles ubicaciones son
+\[
+    X_{c,i}\in A\times D\times\{1,\ldots,|F|-d_c+1\},
+\]
+donde $A$ son las aulas, $D$ los días, $F$ las franjas diarias y $C$ los pares curso--grupo. Si el grupo $c$ tiene $s_c$ sesiones semanales, el número total de sesiones y el espacio de búsqueda sin poda son
+\[
+    n=\sum_{c\in C}s_c,\qquad
+    \Phi=\prod_{c\in C}\left(|A|\,|D|\,(|F|-d_c+1)\right)^{s_c}.
+\]
+El programa calcula $\Phi$ como una aproximación en punto flotante. Esta cantidad no es el número de nodos que visita la búsqueda.
+
+La instancia se guarda con los siguientes hechos de GNU Prolog.
+\begin{lstlisting}
+instanceSetting(Key, Value)
+room(Room, Capacity, Type)
+teacher(Teacher, Name, MaxSlots, Availability)
+group(Course, Group, Name, Enrolled, WeeklySessions, Duration, Requirement)
+teaches(Course, Group, Teacher)
+\end{lstlisting}
+Los identificadores se guardan como listas de bytes UTF-8. Cada sesión tiene un número dentro de su grupo. Las dos estrategias entregan el mismo formato de horario.
+\begin{lstlisting}
+session(Course, Group, SessionOrdinal)
+slot(Room, Day, Start)
+assignment(Course, Group, Teachers, Room, Day, Start, Duration)
+\end{lstlisting}
+\texttt{Teachers} contiene todos los profesores del grupo, que participan en la misma sesión. Una relación de docencia repetida no duplica profesores ni sesiones.
+
+\section{Restricciones}
+
+\subsection{Restricciones duras}
+
+Todo horario debe cumplir las siguientes reglas.
+\begin{itemize}
+    \item Dos sesiones no pueden compartir una franja del mismo día si pertenecen al mismo grupo, tienen un profesor en común o usan la misma aula.
+    \item El aula debe tener capacidad suficiente y un tipo compatible. Una sesión de teoría puede usar aulas de teoría o mixtas. Una de laboratorio puede usar aulas de laboratorio o mixtas. Una de tipo mixto puede usar cualquiera de los tipos declarados.
+    \item La sesión debe comenzar cuando todos sus profesores estén disponibles. Se revisa la franja de inicio, como indica el enunciado.
+    \item La carga semanal de cada profesor no puede superar su máximo de franjas. Se calcula sumando sesiones semanales por duración de cada grupo que imparte.
+    \item \texttt{aula\_fija} obliga a usar un aula concreta. \texttt{prohibida} impide ocupar la franja indicada. \texttt{excluyentes} impide que dos grupos compartan una franja del mismo día.
+\end{itemize}
+La carga del profesor se conoce antes de buscar, porque el programa no elige qué grupos imparte.
+
+\subsection{Restricciones blandas y optimización}
+
+\texttt{prefiere} agrega su peso al costo si el grupo no tiene una sesión que empiece en el día y la franja indicados. \texttt{compacta} agrega su peso por cada hueco del grupo. Un hueco es una franja libre entre la primera y la última franja ocupada en un mismo día. Se cuentan todas las franjas que cubre cada sesión. Los huecos de profesores se muestran en la salida, pero no se suman al costo.
+
+Con \texttt{-{}-optimizar}, ambas estrategias usan \emph{branch and bound}. Guardan el mejor horario completo encontrado y calculan una cota inferior con el costo de los grupos que ya tienen todas sus sesiones asignadas. Si esa suma es mayor o igual al mejor costo, dejan de explorar la rama.
+
+La cota es válida para pesos no negativos que caben en los enteros de GNU Prolog. El costo de un grupo completo ya no cambia y los grupos pendientes solo pueden agregar un costo no negativo. En dominios finitos también se cuentan los grupos que la propagación deja completamente asignados. El resultado se marca como óptimo solo si la búsqueda termina sin alcanzar el límite.
+
+\section{Estrategias de búsqueda}
+
+\subsection{Backtracking (BT)}
+
+Se guarda una lista de sesiones pendientes y otra de asignaciones. Para cada sesión se prueba una ubicación de su dominio. Si una opción falla, Prolog vuelve a una opción anterior.
+
+La variante básica usa generación y prueba. Primero asigna todas las sesiones y luego verifica el horario. Conserva el filtro inicial por capacidad, tipo y disponibilidad, así como las reducciones de simetría. Esta variante se usa como referencia en las mediciones.
+
+La variante con verificación anticipada revisa los conflictos con las sesiones ya asignadas antes de seguir. Así evita completar horarios que ya incumplen una regla. Las opciones compatibles se vuelven a calcular según la rama actual. Esta es la variante que utiliza normalmente el programa.
+
+Los nodos, retrocesos y el mejor horario se guardan con \texttt{assertz/1} y \texttt{retract/1}, para conservarlos cuando Prolog retrocede.
+
+\subsection{Dominios finitos (FD)}
+
+Cada sesión usa tres variables enteras para el índice de aula, el índice de día y la franja inicial. Los índices de aula y día comienzan en 1 y siguen el orden de la instancia. El modelo se guarda de la siguiente forma.
+\begin{lstlisting}
+fdSession(Session, RoomIndex, DayIndex, Start, Tuples)
+indexMaps(Rooms, Days)
+\end{lstlisting}
+\texttt{fd\_domain/3} fija los rangos y \texttt{fd\_relation/2} permite solo las combinaciones de aula, día y franja que cumplen capacidad, tipo, disponibilidad, aula fija y franjas prohibidas.
+
+Para evitar conflictos, se comprueba que las sesiones tengan distinto día, intervalos separados o, cuando basta, distinta aula. Estas comparaciones reducen los valores posibles durante la búsqueda. Los conflictos y el orden de simetría se manejan con comparaciones, sin listar todas las combinaciones permitidas. La carga de profesores se revisa antes de buscar porque es fija. Los costos blandos se calculan con predicados de Prolog.
+
+Para saber qué ubicaciones siguen disponibles, FD prueba sus tres valores dentro de \texttt{findall/3}. El retroceso deshace cada prueba. \texttt{fd\_labeling/2} asigna las variables que aún faltan, comenzando por el menor valor.
+
+\section{Heurísticas y poda}
+
+\subsection{Orden de búsqueda}
+
+Las dos estrategias usan los siguientes criterios.
+\begin{itemize}
+    \item \textbf{Orden original}. Se toman las sesiones en el orden de lectura.
+    \item \textbf{MRV}. Se elige primero la sesión con menos ubicaciones posibles en la rama actual.
+    \item \textbf{Grado}. Se elige primero la sesión con más restricciones con otras sesiones pendientes. Se cuentan aula, grupo, cada profesor compartido y exclusión.
+    \item \textbf{Demanda}. Se elige primero el grupo con más inscritos y, en caso de empate, mayor duración.
+    \item \textbf{LCV}. Se toma la primera sesión pendiente y se prueba primero la ubicación que deja más opciones a las demás.
+\end{itemize}
+Los empates conservan el orden original. MRV cuenta las combinaciones completas de aula, día y franja que aún son posibles. En FD, \texttt{ff} usa este mismo criterio. Se aplica a las ubicaciones completas y no a una sola variable de \texttt{fd\_labeling/2}. Así, BT y FD comparan la misma clase de decisión.
+
+\subsection{Reducción de simetría}
+
+Se aplican dos reglas para evitar horarios que solo cambian el orden de sesiones o los nombres de aulas equivalentes.
+\begin{itemize}
+    \item Las sesiones de un mismo grupo se ordenan por día y franja inicial, según su número semanal. BT revisa el orden al asignar. FD lo impone entre sesiones consecutivas. Para duración cero se permite el mismo inicio.
+    \item Las aulas de igual capacidad y tipo se usan por primera vez en un orden fijo. Se excluyen las aulas que aparecen en \texttt{aula\_fija}. La comparación usa la lista original de sesiones, aunque la heurística elija otro orden.
+\end{itemize}
+En FD, el orden de sesiones usa dos variables que pueden valer 0 o 1. Una indica un día anterior y la otra indica el mismo día con inicio anterior. \texttt{fd\_all\_different/1} obliga a que sean distintas. Como ambos casos no pueden ocurrir juntos, esto exige que uno se cumpla. El intercambio de aulas equivalentes conserva las restricciones y el costo.
+
+\section{Archivos, verificación y errores}
+
+\texttt{horarios.sh} invoca GNU Prolog. El programa lee el archivo en modo binario y procesa sus líneas con listas y recursión. Reconoce las secciones, elimina los espacios al inicio y al final de los campos y conserva los números de línea. No usa utilidades externas para leer la instancia.
+
+La lectura se detiene ante el primer error de sintaxis. La validación revisa referencias, duplicados y rangos, y reúne los errores de coherencia. Como recibe todas las secciones, su orden no afecta las referencias. Los hechos de la instancia se reemplazan solo después de validar los datos.
+
+Antes de buscar, el programa detecta grupos sin aula o ubicación permitida, sesiones que no caben y profesores con carga imposible. Que estos controles pasen no garantiza que exista una solución. Antes de escribir un horario, \texttt{checkSchedule/1} revisa de forma independiente las restricciones duras y la cantidad exacta de sesiones por grupo.
+
+Si una instancia no tiene solución, el diagnóstico busca primero sin restricciones duras declaradas. Luego las agrega en el orden de lectura e identifica la primera que deja la instancia sin solución. Si falla desde el inicio, la causa está en las restricciones implícitas. No se busca un conjunto mínimo de restricciones.
+
+La salida ordena las asignaciones y muestra horarios por grupo, profesor y, si se solicita, aula. La exportación a Prolog contiene un hecho \texttt{asignacion/7} por sesión, con los mismos datos del horario. Al terminar de escribir, se cierran los archivos.
+
+Los errores de sintaxis y coherencia producen un reporte de instancia inválida. Los errores de archivos y las inconsistencias detectadas antes de buscar se informan en la terminal. Si se alcanza el límite y ya se encontró un horario completo, se conserva el mejor. No se entrega un horario parcial.
+
+\section{Resultados experimentales}
+
+\subsection{Mediciones}
+
+Se usó GNU Prolog 1.4.5 en Ubuntu, con 128 MiB de pila global. Las búsquedas tuvieron un límite de 5000 nodos y cada proceso pudo ejecutarse hasta cinco segundos.
+
+Cada prueba se repitió cinco veces en las comparaciones de heurísticas, ejecución compilada y optimización. En los tamaños crecientes y el caso FD sin restricciones blandas se repitió tres veces. Las tablas muestran la mediana, que es el valor central de las repeticiones.
+
+\texttt{statistics/2} mide CPU y tiempo transcurrido durante la lectura, validación, preparación y búsqueda. La orden \texttt{time} mide el proceso completo, incluyendo el arranque del programa y la escritura de la salida. Las versiones compiladas se prepararon antes de medir. Cuando se ejecuta el diagnóstico, sus tiempos y contadores también se suman.
+
+Un nodo es el estado inicial o una ubicación admitida antes de revisar orden, simetría, cota y continuación. Las ubicaciones descartadas por el filtro no cuentan. Un retroceso se cuenta cuando una opción termina sin interrumpir la búsqueda por solución o límite. Las pruebas temporales de las heurísticas consumen tiempo, pero no se cuentan como nodos.
+
+Se usan $N$ para nodos, $B$ para retrocesos y $T$ para CPU en segundos. Las métricas pedidas son
+\[
+    R=\frac{N}{T},\qquad
+    S=\frac{T_{\text{básico}}}{T},\qquad
+    E=\frac{N_{\text{básico}}-N}{N_{\text{básico}}}.
+\]
+$R$ es la tasa de exploración, $S$ la aceleración y $E$ la eficiencia de poda. En la tabla, $E$ se muestra como porcentaje. No se calculan tasa ni aceleración cuando el tiempo medido es cero, ni se compara una búsqueda interrumpida con otra completa como si ambas hubieran resuelto la instancia.
+
+\subsection{Comparación de heurísticas}
+
+Se usó \path{instances/valid/constraints.dat}, con cinco sesiones y ocho franjas ocupadas, buscando la primera solución sin optimizar. En la tabla~\ref{tab-heuristicas}, BT usa verificación anticipada, salvo la variante básica.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \pgfplotstabletypeset[
+        columns={Config,CPU,N,B,R,S,E,Cost},
+        columns/Config/.style={string type,column type=l|,column name={Configuración}},
+        columns/CPU/.style={column type=r|,column name={$T$ (s)},fixed,fixed zerofill,precision=3},
+        columns/N/.style={column type=r|,column name={$N$},int detect,1000 sep={}},
+        columns/B/.style={column type=r|,column name={$B$},int detect,1000 sep={}},
+        columns/R/.style={column type=r|,column name={$R$ (s$^{-1}$)},fixed,precision=1,1000 sep={}},
+        columns/S/.style={column type=r|,column name={$S$},fixed,fixed zerofill,precision=2},
+        columns/E/.style={column type=r|,column name={$E$ (\%)},fixed,fixed zerofill,precision=2},
+        columns/Cost/.style={column type=r,column name={Costo},int detect},
+        every head row/.style={before row=\hline,after row=\hline},
+        every last row/.style={after row=\hline}
+    ]{\comparisonData}
+    \caption{Resultados por estrategia y heurística}
+    \label{tab-heuristicas}
+\end{table}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            ymin=0,
+            ymax=90,
+            width=0.85\textwidth,
+            height=6cm,
+            xlabel={Configuración},
+            ylabel={CPU (ms)},
+            symbolic x coords={BT-básico,BT-original,BT-MRV,BT-grado,BT-demanda,BT-LCV,FD-original,FD-MRV,FD-grado,FD-demanda,FD-LCV},
+            xtick=data,
+            xticklabel style={rotate=45,anchor=east,font=\scriptsize},
+            nodes near coords,
+            every node near coord/.append style={font=\scriptsize}
+        ]
+            \addplot table[x=Config,y expr=\thisrow{CPU}*1000]{\comparisonData};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Tiempo mediano de CPU sobre la instancia común}
+    \label{fig-cpu}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            ybar,
+            ymin=0,
+            ymax=120,
+            width=0.85\textwidth,
+            height=6cm,
+            xlabel={Configuración},
+            ylabel={Nodos evitados (\%)},
+            symbolic x coords={BT-básico,BT-original,BT-MRV,BT-grado,BT-demanda,BT-LCV,FD-original,FD-MRV,FD-grado,FD-demanda,FD-LCV},
+            xtick=data,
+            xticklabel style={rotate=45,anchor=east,font=\scriptsize},
+            nodes near coords={\pgfmathprintnumber[fixed,precision=2]{\pgfplotspointmeta}},
+            every node near coord/.append style={font=\tiny,rotate=90,anchor=west}
+        ]
+            \addplot table[x=Config,y=E]{\comparisonData};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Porcentaje de nodos evitados}
+    \label{fig-poda}
+\end{figure}
+\FloatBarrier
+
+\subsection{Ejecución interpretada y compilada}
+
+La tabla~\ref{tab-nativa} compara las mismas variantes sobre esa instancia. El tiempo externo incluye el arranque del programa y la escritura de la salida. Un tiempo externo de 0.00 refleja el redondeo de \texttt{time}.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{l|l|r|r|r|r}
+        \hline
+        Variante & Ejecución & CPU (s) & Pared interna (s) & Pared externa (s) & Nodos \\
+        \hline
+Básica & Interpretada & 0.081 & 0.081 & 0.16 & 1458 \\
+Básica & Compilada & 0.076 & 0.076 & 0.07 & 1458 \\
+Anticipada & Compilada & 0.002 & 0.002 & 0.00 & 6 \\
+        \hline
+    \end{tabular}
+    \caption{Comparación de ejecución interpretada y compilada}
+    \label{tab-nativa}
+\end{table}
+\FloatBarrier
+
+\subsection{Tamaños crecientes}
+
+Se tomaron los primeros grupos de \path{instances/benchmark/large.dat} hasta llegar a 10, 20, 40 y 80 sesiones. Cuando hizo falta, se redujo la cantidad semanal del último grupo. Se conservaron aulas, días, franjas y profesores, y se filtraron docencia y restricciones duras por los grupos presentes. Se quitaron \texttt{prefiere} y \texttt{compacta} para medir solo la búsqueda de un horario válido.
+
+La tabla~\ref{tab-tamano} muestra CPU en segundos y nodos como $T/N$. L indica el límite de 5000 nodos. El corte externo significa que no se obtuvo un reporte final en cinco segundos.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \begin{tabular}{r|l|l|l|l}
+        \hline
+        Sesiones & BT básico & BT original & BT MRV & FD MRV \\
+        \hline
+10 & 0.256 / 5000 (L) & 0.007 / 11 & 0.031 / 21 & 0.011 / 11 \\
+20 & 0.305 / 5000 (L) & 0.022 / 21 & 0.218 / 21 & 0.060 / 21 \\
+40 & 0.353 / 5000 (L) & 0.078 / 41 & 1.444 / 41 & 0.400 / 41 \\
+80 & 1.163 / 5000 (L) & 0.473 / 81 & Corte externo & 2.446 / 81 \\
+        \hline
+    \end{tabular}
+    \caption{Medianas de CPU en segundos y nodos por tamaño}
+    \label{tab-tamano}
+\end{table}
+\FloatBarrier
+
+\subsection{Optimización y pruebas de funcionamiento}
+
+En \path{instances/valid/optimization.dat} se deben elegir dos inicios distintos entre 1, 3 y 5. Sus costos son 6 para $(1,3)$, 6 para $(1,5)$ y 5 para $(3,5)$. Ambas estrategias completaron la búsqueda y encontraron el mínimo de 5. La tabla~\ref{tab-optimizacion} muestra sus mediciones.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{l|r|r|r|r|r}
+        \hline
+        Estrategia & Nodos & Retrocesos & CPU (s) & Pared (s) & Costo \\
+        \hline
+BT & 12 & 11 & 0.000 & 0.000 & 5 \\
+FD & 7 & 6 & 0.000 & 0.001 & 5 \\
+        \hline
+    \end{tabular}
+    \caption{Optimización con \emph{branch and bound}}
+    \label{tab-optimizacion}
+\end{table}
+
+Los ceros de CPU se deben a la resolución de un milisegundo. En el caso FD sin restricciones blandas, \path{instances/valid/small.dat}, la propagación asignó las dos sesiones y solo se contó el nodo inicial.
+
+También se ejecutaron las nueve instancias originales con ambas estrategias. Solo se optimizaron \texttt{constraints.dat} y \texttt{optimization.dat}. Los resultados coinciden entre BT y FD.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \begin{tabular}{l|l|r|r|r}
+        \hline
+        Archivo relativo a \texttt{instances} & Resultado & Código & Sesiones & Costo \\
+        \hline
+        \path{valid/small.dat} & Válida & 0 & 2 & 0 \\
+        \path{valid/constraints.dat} & Óptima & 0 & 5 & 0 \\
+        \path{valid/optimization.dat} & Óptima & 0 & 2 & 5 \\
+        \path{benchmark/large.dat} & Primera válida & 0 & 80 & 1 \\
+        \path{invalid/syntax.dat} & Instancia inválida & 1 & - & - \\
+        \path{invalid/coherence.dat} & Instancia inválida & 1 & - & - \\
+        \path{unsatisfiable/load.dat} & Inconsistencia previa & 1 & - & - \\
+        \path{unsatisfiable/rooms.dat} & Sin solución & 2 & - & - \\
+        \path{unsatisfiable/restrictions.dat} & Sin solución & 2 & - & - \\
+        \hline
+    \end{tabular}
+    \caption{Resultados de las instancias originales}
+    \label{tab-correctitud}
+\end{table}
+\FloatBarrier
+
+\subsection{Análisis de los resultados}
+
+En la instancia común, BT anticipado con orden original pasa de 1458 a 6 nodos y de 0.081 a 0.002 segundos de CPU. Esto equivale a una aceleración de 40.5 y a evitar el 99.59\% de los nodos. MRV, grado y demanda visitan los mismos nodos, pero tardan más en elegir la sesión. LCV explora 14 nodos y entrega una primera solución de costo 3. Su criterio busca dejar opciones disponibles, no reducir el costo blando.
+
+Prolog prueba las cláusulas y alternativas en su orden. Ese orden influye en las opciones que se intentan primero. En la serie creciente, el orden original aprovecha la disponibilidad restringida y las sesiones agrupadas. MRV vuelve a revisar muchas sesiones pendientes. Con 40 sesiones visita los mismos 41 nodos, pero tarda 1.444 segundos frente a 0.078 del orden original. Con 80 sesiones alcanza el corte externo.
+
+FD reduce los dominios, pero también prepara y prueba combinaciones y propaga restricciones entre variables. En esta serie, ese trabajo no siempre compensa. Con 80 sesiones, FD MRV y BT original visitan 81 nodos, pero tardan 2.446 y 0.473 segundos respectivamente.
+
+Recorrer y copiar listas, probar opciones temporales y actualizar contadores con \texttt{assertz/1} y \texttt{retract/1} también toma tiempo. Esos pasos ayudan a explicar por qué visitar menos nodos no siempre produce la aceleración esperada. No se midió el costo de cada paso por separado.
+
+La lectura y validación forman parte del tiempo interno. El código compilado evita cargar y compilar el programa en cada ejecución. El tiempo externo de la variante básica baja de 0.16 a 0.07 segundos, mientras la CPU interna cambia poco. La estructura de las instancias influye en los resultados, por lo que estos datos no demuestran que una heurística sea siempre mejor. Las diferencias de uno o dos milisegundos son pequeñas para sacar conclusiones con pocas repeticiones.
+
+\section{Limitaciones}
+
+\begin{itemize}
+    \item La variante básica se activa cambiando un hecho del código. No tiene una opción de comandos.
+    \item La cota solo usa grupos completos y puede descartar pocas ramas.
+    \item El diagnóstico no busca un conjunto mínimo ni tiene límite de nodos. Tampoco se limitan el tiempo y la memoria de preparación, heurísticas y diagnóstico.
+    \item No se detectan enteros demasiado grandes. El verificador no exige inicios enteros en horarios recibidos directamente. Los buscadores sí generan enteros.
+    \item Las rutas de entrada y salida pueden coincidir y sobrescribir archivos. Un fallo al escribir puede dejar archivos incompletos o solo el reporte, sin la exportación.
+\end{itemize}
+
+\end{document}
+
+% Individual measurements
+% Measurement fields ["case","variant","mode","strategy","heuristic","optimize","repeat","status","nodes","backtracks","cpu","wall","cost","external_wall"]
+% ["constraints","basic","interpreted","bt","original",false,1,"SOLUTION FOUND",1458,1452,0.084,0.085,2,0.18]
+% ["constraints","basic","interpreted","bt","original",false,2,"SOLUTION FOUND",1458,1452,0.084,0.085,2,0.17]
+% ["constraints","basic","interpreted","bt","original",false,3,"SOLUTION FOUND",1458,1452,0.081,0.08,2,0.16]
+% ["constraints","basic","interpreted","bt","original",false,4,"SOLUTION FOUND",1458,1452,0.081,0.08,2,0.16]
+% ["constraints","basic","interpreted","bt","original",false,5,"SOLUTION FOUND",1458,1452,0.081,0.081,2,0.15]
+% ["constraints","basic","native","bt","original",false,1,"SOLUTION FOUND",1458,1452,0.075,0.075,2,0.07]
+% ["constraints","basic","native","bt","original",false,2,"SOLUTION FOUND",1458,1452,0.075,0.076,2,0.07]
+% ["constraints","basic","native","bt","original",false,3,"SOLUTION FOUND",1458,1452,0.076,0.076,2,0.08]
+% ["constraints","basic","native","bt","original",false,4,"SOLUTION FOUND",1458,1452,0.078,0.079,2,0.08]
+% ["constraints","basic","native","bt","original",false,5,"SOLUTION FOUND",1458,1452,0.076,0.077,2,0.07]
+% ["constraints","forward","native","bt","original",false,1,"SOLUTION FOUND",6,0,0.002,0.003,2,0]
+% ["constraints","forward","native","bt","original",false,2,"SOLUTION FOUND",6,0,0.001,0.002,2,0]
+% ["constraints","forward","native","bt","original",false,3,"SOLUTION FOUND",6,0,0.002,0.002,2,0]
+% ["constraints","forward","native","bt","original",false,4,"SOLUTION FOUND",6,0,0.002,0.002,2,0]
+% ["constraints","forward","native","bt","original",false,5,"SOLUTION FOUND",6,0,0.002,0.002,2,0]
+% ["constraints","forward","interpreted","bt","original",false,1,"SOLUTION FOUND",6,0,0.002,0.002,2,0.08]
+% ["constraints","forward","interpreted","bt","original",false,2,"SOLUTION FOUND",6,0,0.002,0.002,2,0.08]
+% ["constraints","forward","interpreted","bt","original",false,3,"SOLUTION FOUND",6,0,0.003,0.002,2,0.08]
+% ["constraints","forward","interpreted","bt","original",false,4,"SOLUTION FOUND",6,0,0.002,0.002,2,0.08]
+% ["constraints","forward","interpreted","bt","original",false,5,"SOLUTION FOUND",6,0,0.003,0.002,2,0.08]
+% ["constraints","forward","interpreted","bt","mrv",false,1,"SOLUTION FOUND",6,0,0.005,0.004,2,0.08]
+% ["constraints","forward","interpreted","bt","mrv",false,2,"SOLUTION FOUND",6,0,0.004,0.005,2,0.08]
+% ["constraints","forward","interpreted","bt","mrv",false,3,"SOLUTION FOUND",6,0,0.005,0.004,2,0.08]
+% ["constraints","forward","interpreted","bt","mrv",false,4,"SOLUTION FOUND",6,0,0.005,0.004,2,0.08]
+% ["constraints","forward","interpreted","bt","mrv",false,5,"SOLUTION FOUND",6,0,0.006,0.005,2,0.08]
+% ["constraints","forward","interpreted","bt","degree",false,1,"SOLUTION FOUND",6,0,0.002,0.003,2,0.08]
+% ["constraints","forward","interpreted","bt","degree",false,2,"SOLUTION FOUND",6,0,0.003,0.002,2,0.08]
+% ["constraints","forward","interpreted","bt","degree",false,3,"SOLUTION FOUND",6,0,0.003,0.003,2,0.09]
+% ["constraints","forward","interpreted","bt","degree",false,4,"SOLUTION FOUND",6,0,0.003,0.004,2,0.09]
+% ["constraints","forward","interpreted","bt","degree",false,5,"SOLUTION FOUND",6,0,0.003,0.003,2,0.09]
+% ["constraints","forward","interpreted","bt","demand",false,1,"SOLUTION FOUND",6,0,0.002,0.002,2,0.09]
+% ["constraints","forward","interpreted","bt","demand",false,2,"SOLUTION FOUND",6,0,0.003,0.003,2,0.09]
+% ["constraints","forward","interpreted","bt","demand",false,3,"SOLUTION FOUND",6,0,0.004,0.004,2,0.09]
+% ["constraints","forward","interpreted","bt","demand",false,4,"SOLUTION FOUND",6,0,0.002,0.003,2,0.08]
+% ["constraints","forward","interpreted","bt","demand",false,5,"SOLUTION FOUND",6,0,0.002,0.002,2,0.08]
+% ["constraints","forward","interpreted","bt","lcv",false,1,"SOLUTION FOUND",14,8,0.022,0.021,3,0.12]
+% ["constraints","forward","interpreted","bt","lcv",false,2,"SOLUTION FOUND",14,8,0.017,0.018,3,0.21]
+% ["constraints","forward","interpreted","bt","lcv",false,3,"SOLUTION FOUND",14,8,0.019,0.019,3,0.11]
+% ["constraints","forward","interpreted","bt","lcv",false,4,"SOLUTION FOUND",14,8,0.016,0.016,3,0.11]
+% ["constraints","forward","interpreted","bt","lcv",false,5,"SOLUTION FOUND",14,8,0.016,0.016,3,0.12]
+% ["constraints","forward","interpreted","clpfd","original",false,1,"SOLUTION FOUND",5,0,0.001,0.002,2,0.08]
+% ["constraints","forward","interpreted","clpfd","original",false,2,"SOLUTION FOUND",5,0,0.002,0.002,2,0.08]
+% ["constraints","forward","interpreted","clpfd","original",false,3,"SOLUTION FOUND",5,0,0.002,0.002,2,0.08]
+% ["constraints","forward","interpreted","clpfd","original",false,4,"SOLUTION FOUND",5,0,0.003,0.002,2,0.09]
+% ["constraints","forward","interpreted","clpfd","original",false,5,"SOLUTION FOUND",5,0,0.003,0.002,2,0.09]
+% ["constraints","forward","interpreted","clpfd","mrv",false,1,"SOLUTION FOUND",5,0,0.004,0.003,2,0.08]
+% ["constraints","forward","interpreted","clpfd","mrv",false,2,"SOLUTION FOUND",5,0,0.003,0.003,2,0.09]
+% ["constraints","forward","interpreted","clpfd","mrv",false,3,"SOLUTION FOUND",5,0,0.004,0.003,2,0.1]
+% ["constraints","forward","interpreted","clpfd","mrv",false,4,"SOLUTION FOUND",5,0,0.002,0.003,2,0.08]
+% ["constraints","forward","interpreted","clpfd","mrv",false,5,"SOLUTION FOUND",5,0,0.001,0.002,2,0.08]
+% ["constraints","forward","interpreted","clpfd","degree",false,1,"SOLUTION FOUND",5,0,0.002,0.002,2,0.08]
+% ["constraints","forward","interpreted","clpfd","degree",false,2,"SOLUTION FOUND",5,0,0.001,0.002,2,0.08]
+% ["constraints","forward","interpreted","clpfd","degree",false,3,"SOLUTION FOUND",5,0,0.002,0.001,2,0.08]
+% ["constraints","forward","interpreted","clpfd","degree",false,4,"SOLUTION FOUND",5,0,0.002,0.003,2,0.08]
+% ["constraints","forward","interpreted","clpfd","degree",false,5,"SOLUTION FOUND",5,0,0.003,0.002,2,0.09]
+% ["constraints","forward","interpreted","clpfd","demand",false,1,"SOLUTION FOUND",5,0,0.002,0.002,2,0.09]
+% ["constraints","forward","interpreted","clpfd","demand",false,2,"SOLUTION FOUND",5,0,0.003,0.003,2,0.08]
+% ["constraints","forward","interpreted","clpfd","demand",false,3,"SOLUTION FOUND",5,0,0.002,0.002,2,0.08]
+% ["constraints","forward","interpreted","clpfd","demand",false,4,"SOLUTION FOUND",5,0,0.004,0.003,2,0.09]
+% ["constraints","forward","interpreted","clpfd","demand",false,5,"SOLUTION FOUND",5,0,0.002,0.002,2,0.09]
+% ["constraints","forward","interpreted","clpfd","lcv",false,1,"SOLUTION FOUND",5,0,0.004,0.004,2,0.09]
+% ["constraints","forward","interpreted","clpfd","lcv",false,2,"SOLUTION FOUND",5,0,0.004,0.004,2,0.08]
+% ["constraints","forward","interpreted","clpfd","lcv",false,3,"SOLUTION FOUND",5,0,0.004,0.004,2,0.08]
+% ["constraints","forward","interpreted","clpfd","lcv",false,4,"SOLUTION FOUND",5,0,0.005,0.005,2,0.08]
+% ["constraints","forward","interpreted","clpfd","lcv",false,5,"SOLUTION FOUND",5,0,0.004,0.004,2,0.08]
+% ["optimization","forward","interpreted","bt","original",true,1,"SOLUTION FOUND",12,11,0,0,5,0.08]
+% ["optimization","forward","interpreted","bt","original",true,2,"SOLUTION FOUND",12,11,0,0.001,5,0.08]
+% ["optimization","forward","interpreted","bt","original",true,3,"SOLUTION FOUND",12,11,0.001,0,5,0.08]
+% ["optimization","forward","interpreted","bt","original",true,4,"SOLUTION FOUND",12,11,0.001,0,5,0.08]
+% ["optimization","forward","interpreted","bt","original",true,5,"SOLUTION FOUND",12,11,0,0.001,5,0.07]
+% ["optimization","forward","interpreted","clpfd","original",true,1,"SOLUTION FOUND",7,6,0,0.001,5,0.08]
+% ["optimization","forward","interpreted","clpfd","original",true,2,"SOLUTION FOUND",7,6,0,0.001,5,0.08]
+% ["optimization","forward","interpreted","clpfd","original",true,3,"SOLUTION FOUND",7,6,0.002,0.001,5,0.09]
+% ["optimization","forward","interpreted","clpfd","original",true,4,"SOLUTION FOUND",7,6,0,0.001,5,0.09]
+% ["optimization","forward","interpreted","clpfd","original",true,5,"SOLUTION FOUND",7,6,0,0.001,5,0.08]
+% ["small","forward","interpreted","clpfd","original",false,1,"SOLUTION FOUND",1,0,0,0,0,0.08]
+% ["small","forward","interpreted","clpfd","original",false,2,"SOLUTION FOUND",1,0,0.001,0.001,0,0.08]
+% ["small","forward","interpreted","clpfd","original",false,3,"SOLUTION FOUND",1,0,0,0,0,0.08]
+% ["size-10","basic","interpreted","bt","original",false,1,"LIMIT REACHED",5000,4990,0.256,0.255,null,0.33]
+% ["size-10","basic","interpreted","bt","original",false,2,"LIMIT REACHED",5000,4990,0.252,0.252,null,0.33]
+% ["size-10","basic","interpreted","bt","original",false,3,"LIMIT REACHED",5000,4990,0.27,0.27,null,0.35]
+% ["size-10","forward","interpreted","bt","original",false,1,"SOLUTION FOUND",11,0,0.007,0.007,0,0.08]
+% ["size-10","forward","interpreted","bt","original",false,2,"SOLUTION FOUND",11,0,0.007,0.007,0,0.08]
+% ["size-10","forward","interpreted","bt","original",false,3,"SOLUTION FOUND",11,0,0.009,0.008,0,0.09]
+% ["size-10","forward","interpreted","bt","mrv",false,1,"SOLUTION FOUND",21,10,0.031,0.032,0,0.11]
+% ["size-10","forward","interpreted","bt","mrv",false,2,"SOLUTION FOUND",21,10,0.032,0.033,0,0.12]
+% ["size-10","forward","interpreted","bt","mrv",false,3,"SOLUTION FOUND",21,10,0.031,0.031,0,0.12]
+% ["size-10","forward","interpreted","clpfd","mrv",false,1,"SOLUTION FOUND",11,0,0.013,0.012,0,0.09]
+% ["size-10","forward","interpreted","clpfd","mrv",false,2,"SOLUTION FOUND",11,0,0.011,0.011,0,0.1]
+% ["size-10","forward","interpreted","clpfd","mrv",false,3,"SOLUTION FOUND",11,0,0.011,0.012,0,0.09]
+% ["size-20","basic","interpreted","bt","original",false,1,"LIMIT REACHED",5000,4980,0.305,0.305,null,0.38]
+% ["size-20","basic","interpreted","bt","original",false,2,"LIMIT REACHED",5000,4980,0.353,0.352,null,0.43]
+% ["size-20","basic","interpreted","bt","original",false,3,"LIMIT REACHED",5000,4980,0.304,0.305,null,0.39]
+% ["size-20","forward","interpreted","bt","original",false,1,"SOLUTION FOUND",21,0,0.022,0.022,0,0.1]
+% ["size-20","forward","interpreted","bt","original",false,2,"SOLUTION FOUND",21,0,0.021,0.022,0,0.1]
+% ["size-20","forward","interpreted","bt","original",false,3,"SOLUTION FOUND",21,0,0.025,0.025,0,0.1]
+% ["size-20","forward","interpreted","bt","mrv",false,1,"SOLUTION FOUND",21,0,0.218,0.218,0,0.29]
+% ["size-20","forward","interpreted","bt","mrv",false,2,"SOLUTION FOUND",21,0,0.217,0.217,0,0.3]
+% ["size-20","forward","interpreted","bt","mrv",false,3,"SOLUTION FOUND",21,0,0.226,0.226,0,0.3]
+% ["size-20","forward","interpreted","clpfd","mrv",false,1,"SOLUTION FOUND",21,0,0.062,0.061,0,0.14]
+% ["size-20","forward","interpreted","clpfd","mrv",false,2,"SOLUTION FOUND",21,0,0.06,0.06,0,0.14]
+% ["size-20","forward","interpreted","clpfd","mrv",false,3,"SOLUTION FOUND",21,0,0.06,0.06,0,0.14]
+% ["size-40","basic","interpreted","bt","original",false,1,"LIMIT REACHED",5000,4960,0.353,0.353,null,0.44]
+% ["size-40","basic","interpreted","bt","original",false,2,"LIMIT REACHED",5000,4960,0.352,0.352,null,0.43]
+% ["size-40","basic","interpreted","bt","original",false,3,"LIMIT REACHED",5000,4960,0.356,0.356,null,0.43]
+% ["size-40","forward","interpreted","bt","original",false,1,"SOLUTION FOUND",41,0,0.078,0.079,0,0.17]
+% ["size-40","forward","interpreted","bt","original",false,2,"SOLUTION FOUND",41,0,0.08,0.08,0,0.16]
+% ["size-40","forward","interpreted","bt","original",false,3,"SOLUTION FOUND",41,0,0.078,0.077,0,0.15]
+% ["size-40","forward","interpreted","bt","mrv",false,1,"SOLUTION FOUND",41,0,1.411,1.412,0,1.49]
+% ["size-40","forward","interpreted","bt","mrv",false,2,"SOLUTION FOUND",41,0,1.444,1.445,0,1.52]
+% ["size-40","forward","interpreted","bt","mrv",false,3,"SOLUTION FOUND",41,0,1.875,1.875,0,2]
+% ["size-40","forward","interpreted","clpfd","mrv",false,1,"SOLUTION FOUND",41,0,0.327,0.328,0,0.42]
+% ["size-40","forward","interpreted","clpfd","mrv",false,2,"SOLUTION FOUND",41,0,0.424,0.424,0,0.52]
+% ["size-40","forward","interpreted","clpfd","mrv",false,3,"SOLUTION FOUND",41,0,0.4,0.4,0,0.5]
+% ["size-80","basic","interpreted","bt","original",false,1,"LIMIT REACHED",5000,4920,1.186,1.187,null,1.28]
+% ["size-80","basic","interpreted","bt","original",false,2,"LIMIT REACHED",5000,4920,1.109,1.108,null,1.18]
+% ["size-80","basic","interpreted","bt","original",false,3,"LIMIT REACHED",5000,4920,1.163,1.165,null,1.24]
+% ["size-80","forward","interpreted","bt","original",false,1,"SOLUTION FOUND",81,0,0.482,0.482,0,0.58]
+% ["size-80","forward","interpreted","bt","original",false,2,"SOLUTION FOUND",81,0,0.464,0.464,0,0.55]
+% ["size-80","forward","interpreted","bt","original",false,3,"SOLUTION FOUND",81,0,0.473,0.473,0,0.55]
+% ["size-80","forward","interpreted","bt","mrv",false,1,"TIMEOUT",null,null,null,null,null,null]
+% ["size-80","forward","interpreted","bt","mrv",false,2,"TIMEOUT",null,null,null,null,null,null]
+% ["size-80","forward","interpreted","bt","mrv",false,3,"TIMEOUT",null,null,null,null,null,null]
+% ["size-80","forward","interpreted","clpfd","mrv",false,1,"SOLUTION FOUND",81,0,2.225,2.225,0,2.3]
+% ["size-80","forward","interpreted","clpfd","mrv",false,2,"SOLUTION FOUND",81,0,2.446,2.448,0,2.52]
+% ["size-80","forward","interpreted","clpfd","mrv",false,3,"SOLUTION FOUND",81,0,3.097,3.098,0,3.18]
