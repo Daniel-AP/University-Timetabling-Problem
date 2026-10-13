@@ -1,6 +1,9 @@
 \documentclass[11pt,a4paper]{article}
 
-\usepackage[utf8]{inputenc}
+\usepackage{iftex}
+\ifPDFTeX
+    \usepackage[utf8]{inputenc}
+\fi
 \usepackage[T1]{fontenc}
 \usepackage[spanish,es-noshorthands]{babel}
 \usepackage[margin=2.5cm]{geometry}
@@ -10,7 +13,10 @@
 \usepackage{xcolor}
 \usepackage{listings}
 \usepackage{textcomp}
+\usepackage{needspace}
 \usepackage[hidelinks]{hyperref}
+
+\newcommand{\clioption}[1]{\texttt{-{}-#1}}
 
 \lstset{
     basicstyle=\small\ttfamily,
@@ -43,98 +49,140 @@
 \begin{document}
 \maketitle
 
-\section{Requisitos e instalación}
+\section{Instalación}
 
-El proyecto requiere Linux y GNU Prolog 1.4.5. En Windows, la ejecución se realiza desde una distribución de Linux instalada en WSL. Las herramientas necesarias son \texttt{gprolog}, \texttt{gplc}, un compilador de C y GNU Time.
+El programa funciona en Linux con GNU Prolog 1.4.5. En este proyecto se utiliza Linux desde WSL.
 
-En Ubuntu o Debian se instalan mediante:
+En Ubuntu o Debian se instalan GNU Prolog y las herramientas de compilación con el siguiente comando.
 
 \begin{lstlisting}
-sudo apt update
 sudo apt install gprolog build-essential time
 \end{lstlisting}
 
-La versión instalada se consulta con:
+La versión se comprueba con \texttt{gprolog -{}-version}. Los ejemplos siguientes se ejecutan desde la carpeta del proyecto.
+
+\section{Uso del programa}
+
+Para resolver una instancia se indican el archivo de entrada, el archivo de salida y la estrategia.
 
 \begin{lstlisting}
-gprolog --version
-gplc --version
+./horarios.sh instances/valid/small.dat salida.txt bt
 \end{lstlisting}
 
-\section{Ubicación del proyecto}
+La estrategia \texttt{bt} utiliza backtracking y \texttt{clpfd} utiliza dominios finitos. Sin opciones adicionales, el programa entrega el primer horario válido.
 
-Los comandos de este manual se ejecutan desde la carpeta que contiene \texttt{horarios.pl}, \texttt{horarios.sh}, \texttt{src} e \texttt{instances}. Se habilita el guion de envoltura y se crean las carpetas utilizadas en los ejemplos:
-
-\begin{lstlisting}
-cd "<ruta-del-proyecto>"
-chmod +x horarios.sh
-mkdir -p output/experiments build
-\end{lstlisting}
-
-Las rutas relativas se interpretan respecto de esta ubicación. Las rutas con espacios deberán escribirse entre comillas en la terminal. La instancia, el reporte y la exportación deberán referirse a archivos diferentes, incluso si se utilizan rutas equivalentes con componentes como \texttt{./}.
-
-El programa reemplaza los archivos de salida existentes. Sus carpetas deben permitir la escritura; no se crean automáticamente.
-
-\section{Formato de entrada}
-
-La instancia se describe en un archivo de texto plano con extensión \texttt{.dat}, codificado en UTF-8 y con saltos de línea de tipo Unix, LF. Cada registro ocupa una línea y sus campos se separan mediante punto y coma.
-
-Los encabezados comienzan con \texttt{\#:} y utilizan los nombres de las subsecciones siguientes. Cada encabezado aparece a lo sumo una vez y el orden de las secciones es indistinto. Los comentarios comienzan con \texttt{\#}, salvo los encabezados; las líneas vacías se ignoran.
-
-Los espacios al inicio y al final de los campos se eliminan. Los campos numéricos se escriben como enteros decimales no negativos, sin signo ni separador decimal. Las referencias deben coincidir con los identificadores declarados.
-
-\subsection{CONFIG}
-
-Registros de la forma \texttt{clave;valor}. Las cuatro claves son obligatorias y aparecen exactamente una vez.
+\subsection{Opciones disponibles}
 
 \begin{center}
-\begin{tabularx}{\linewidth}{@{}lXl@{}}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
 \toprule
-\textbf{Clave} & \textbf{Descripción} & \textbf{Ejemplo} \\
+\textbf{Opción} & \textbf{Uso} \\
 \midrule
-\texttt{dias} & Códigos de día, de un carácter cada uno, separados por comas. Su orden define la cronología de los días. & \texttt{L,M,X,J,V} \\
-\texttt{franjas} & Cantidad de franjas horarias por día, numeradas desde 1. & \texttt{7} \\
-\texttt{inicio} & Hora de inicio de la primera franja, en formato \texttt{HH:MM}. & \texttt{07:00} \\
-\texttt{duracion\_franja} & Duración de cada franja, en minutos. & \texttt{60} \\
+\clioption{heuristica=VALOR} & Cambia el orden de búsqueda. El valor inicial es \texttt{original}. \\
+\clioption{optimizar} & Busca el horario de menor costo. \\
+\clioption{limite=N} & Limita la búsqueda a \texttt{N} nodos. Sin esta opción no hay límite de nodos. \\
+\clioption{horarios-por-aula} & Incluye el horario de cada aula en el resultado. \\
+\clioption{exportar-prolog=RUTA} & Guarda también el horario en un archivo Prolog. \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-\subsection{AULA}
+Se elige una sola heurística por ejecución.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}lX@{}}
+\toprule
+\textbf{Valor} & \textbf{Criterio} \\
+\midrule
+\texttt{original} & Mantiene el orden de lectura de las sesiones. \\
+\texttt{mrv} & Elige la sesión con menos ubicaciones disponibles. \\
+\texttt{degree} & Elige la sesión con más restricciones con otras sesiones. \\
+\texttt{demand} & Prioriza los grupos con más inscritos y luego las sesiones más largas. \\
+\texttt{lcv} & Prueba primero las ubicaciones que dejan más opciones a las otras sesiones. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+El valor \texttt{ff} también está disponible con \texttt{clpfd} y equivale a \texttt{mrv} en este programa.
+
+\Needspace{14\baselineskip}
+\subsection{Ejemplos de ejecución}
+
+Backtracking con MRV y dominios finitos con \texttt{ff} se ejecutan de la siguiente manera.
 
 \begin{lstlisting}
+./horarios.sh instances/valid/constraints.dat \
+    salida-mrv.txt bt --heuristica=mrv
+
+./horarios.sh instances/valid/small.dat \
+    salida-fd.txt clpfd --heuristica=ff
+\end{lstlisting}
+
+Para buscar el menor costo se agrega \clioption{optimizar}. El límite permite detener una búsqueda extensa.
+
+\begin{lstlisting}
+./horarios.sh instances/valid/optimization.dat \
+    salida-optima.txt clpfd --optimizar --limite=5000000
+\end{lstlisting}
+
+Para incluir las aulas y exportar el horario a Prolog se utilizan las opciones correspondientes.
+
+\begin{lstlisting}
+./horarios.sh instances/valid/small.dat salida.txt bt \
+    --horarios-por-aula --exportar-prolog=horario.pl
+\end{lstlisting}
+
+\section{Archivo de entrada}
+
+La entrada es un archivo \texttt{.dat} en UTF-8 con saltos de línea de Linux. Los campos se separan con punto y coma. Las líneas vacías y los comentarios que empiezan con \texttt{\#} se ignoran.
+
+Las secciones pueden aparecer en cualquier orden, una sola vez cada una. Los valores numéricos son enteros no negativos y los identificadores usados deben estar declarados.
+
+\subsection{Configuración}
+
+La sección \texttt{CONFIG} contiene cuatro datos obligatorios. Este ejemplo define dos días, cuatro franjas diarias, una hora de inicio y franjas de sesenta minutos.
+
+\begin{lstlisting}
+#:CONFIG
+dias;L,M
+franjas;4
+inicio;07:00
+duracion_franja;60
+\end{lstlisting}
+
+Cada día tiene un código de un carácter. El orden de los códigos define el orden de los días en el horario.
+
+\Needspace{13\baselineskip}
+\subsection{Aulas, profesores y cursos}
+
+Los registros de las demás secciones siguen estos formatos.
+
+\begin{lstlisting}
+#:AULA
 codigo;capacidad;tipo
-\end{lstlisting}
 
-El código es único y la capacidad indica el máximo de estudiantes que admite el aula. Las categorías de aula y de requerimiento de grupo son \texttt{teoria}, \texttt{laboratorio} y \texttt{mixta}.
-
-\subsection{PROFESOR}
-
-\begin{lstlisting}
+#:PROFESOR
 codigo;nombre;max_franjas;disponibilidad
-\end{lstlisting}
 
-El código es único. \texttt{max\_franjas} establece la carga semanal máxima, considerando la duración de las sesiones. La disponibilidad se expresa mediante rangos del mismo día, con extremos inclusivos, como \texttt{L1-L4,M2-M5}. Un campo vacío indica disponibilidad total. Esta condición se comprueba sobre la franja inicial de cada sesión.
-
-\subsection{CURSO}
-
-\begin{lstlisting}
+#:CURSO
 codigo;nombre;grupo;inscritos;semanales;duracion;requiere
-\end{lstlisting}
 
-El par \texttt{(codigo, grupo)} es único. \texttt{inscritos} indica el número de estudiantes; \texttt{semanales}, la cantidad de sesiones por semana; \texttt{duracion}, las franjas consecutivas de cada sesión; y \texttt{requiere}, la categoría de aula necesaria.
-
-\subsection{IMPARTE}
-
-\begin{lstlisting}
+#:IMPARTE
 curso;grupo;profesor
 \end{lstlisting}
 
-Cada grupo debe tener al menos un profesor. Cuando se declaran varios, todos participan en cada sesión del grupo. La repetición de una relación no duplica sesiones ni profesores.
+Los códigos de aula y profesor son únicos. Cada grupo se identifica por el código de curso y el grupo. En \texttt{CURSO}, \texttt{semanales} indica cuántas sesiones se necesitan y \texttt{duracion} cuántas franjas consecutivas ocupa cada sesión.
 
-\subsection{RESTRICCION}
+Los tipos admitidos son \texttt{teoria}, \texttt{laboratorio} y \texttt{mixta}. Un grupo de teoría puede usar aulas de teoría o mixtas. Uno de laboratorio puede usar aulas de laboratorio o mixtas. El requerimiento \texttt{mixta} admite cualquier tipo de aula. La capacidad debe alcanzar para todos los inscritos.
 
-Se admiten las siguientes formas:
+La disponibilidad del profesor se escribe con rangos como \texttt{L1-L4,M2-M3}. Si el campo queda vacío, tiene disponibilidad total. Se comprueba que cada sesión comience dentro de esa disponibilidad y que la carga semanal no supere \texttt{max\_franjas}.
+
+Cada grupo necesita al menos un profesor en \texttt{IMPARTE}. Si tiene varios, todos participan en cada sesión.
+
+\Needspace{14\baselineskip}
+\subsection{Restricciones}
+
+La sección \texttt{RESTRICCION} admite estos registros. Un valor como \texttt{L3} indica el día y la franja.
 
 \begin{lstlisting}
 aula_fija;curso;grupo;aula
@@ -144,221 +192,139 @@ prefiere;curso;grupo;diaFranja;peso
 compacta;curso;grupo;peso
 \end{lstlisting}
 
-Las restricciones duras son \texttt{aula\_fija}, que exige utilizar el aula indicada; \texttt{prohibida}, que impide cubrir la franja indicada; y \texttt{excluyentes}, que impide el solapamiento de los dos grupos.
+\begin{itemize}
+    \item \texttt{aula\_fija} obliga al grupo a usar el aula indicada.
+    \item \texttt{prohibida} impide que una sesión cubra esa franja.
+    \item \texttt{excluyentes} impide que dos grupos tengan clases al mismo tiempo.
+    \item \texttt{prefiere} suma el peso al costo si ninguna sesión empieza en el día y la franja indicados.
+    \item \texttt{compacta} suma el peso por cada franja libre entre sesiones del grupo en un mismo día.
+\end{itemize}
 
-Las restricciones blandas son \texttt{prefiere}, que agrega el peso al costo si ninguna sesión del grupo comienza en la ubicación indicada, y \texttt{compacta}, que agrega el peso por cada franja libre entre la primera y la última franja ocupada por el grupo en un mismo día. El valor \texttt{L3}, por ejemplo, identifica la franja 3 del día \texttt{L}.
+Las tres primeras restricciones son obligatorias. Las dos últimas son preferencias y pueden incumplirse a cambio de aumentar el costo.
 
-\section{Ejecución desde la terminal}
-\label{sec:arguments}
+\section{Lectura del resultado}
 
-El guion \texttt{horarios.sh} invoca a GNU Prolog y carga el programa. La sintaxis es:
+El archivo de salida muestra las sesiones asignadas, los horarios por grupo y profesor, el costo y las medidas de búsqueda. Los mensajes aparecen en inglés.
 
-\begin{lstlisting}
-./horarios.sh <entrada.dat> <salida.txt> <estrategia> [opciones]
-\end{lstlisting}
-
-Los tres argumentos iniciales son obligatorios: ruta de la instancia, ruta del reporte y estrategia, respectivamente. Las estrategias admitidas son \texttt{bt} y \texttt{clpfd}. Los nombres de opciones y valores distinguen mayúsculas y minúsculas; cada opción se especifica a lo sumo una vez.
-
-\subsection{Opciones}
+Sin optimización se entrega el primer horario válido. Con \clioption{optimizar}, el resultado es óptimo cuando la búsqueda termina sin alcanzar el límite. Si se alcanza el límite, puede entregarse el mejor horario completo encontrado hasta ese momento.
 
 \begin{center}
-\begin{tabularx}{\linewidth}{@{}lX@{}}
+\begin{tabularx}{\linewidth}{@{}lcX@{}}
 \toprule
-\textbf{Opción} & \textbf{Descripción} \\
+\textbf{Estado} & \textbf{Código} & \textbf{Significado} \\
 \midrule
-\texttt{--heuristica=VALOR} & Selecciona el criterio de exploración. El valor predeterminado es \texttt{original}. \\
-\texttt{--optimizar} & Activa la búsqueda de menor costo mediante \emph{branch and bound}. \\
-\texttt{--limite=N} & Fija el máximo de nodos admitidos. \texttt{N} es un entero decimal no negativo; con cero no se admite el nodo inicial. Si se omite, no hay límite de nodos. \\
-\texttt{--horarios-por-aula} & Agrega las rejillas de aulas al reporte. \\
-\texttt{--exportar-prolog=RUTA} & Escribe un archivo Prolog adicional cuando existe un horario completo. \\
+\texttt{SOLUTION FOUND} & 0 & Se encontró un horario válido. \\
+\texttt{NO SOLUTION} & 2 & La instancia no tiene solución. \\
+\texttt{LIMIT REACHED} & 3 & Se alcanzó el límite de búsqueda. No se garantiza el menor costo. \\
+\texttt{INVALID INSTANCE} & 1 & La entrada tiene errores de formato o de datos. \\
+Error en terminal & 1 & Falló la lectura o escritura, los argumentos son incorrectos o se detectó una carga imposible antes de buscar. \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-Las heurísticas admitidas por ambas estrategias son:
+El reporte usa un diagnóstico cuando la búsqueda no encuentra un horario o la entrada es inválida. Los errores de archivos y las inconsistencias detectadas antes de buscar se informan en la terminal.
 
-\begin{itemize}
-    \item \textbf{\texttt{original}}: selección de sesiones en el orden original.
-    \item \textbf{\texttt{mrv}}: selección de la sesión con menos ubicaciones compatibles o viables.
-    \item \textbf{\texttt{degree}}: selección de la sesión con mayor grado de restricciones con otras sesiones pendientes.
-    \item \textbf{\texttt{demand}}: prioridad al mayor número de inscritos y, en caso de empate, a la mayor duración.
-    \item \textbf{\texttt{lcv}}: selección original de sesiones y ordenamiento de ubicaciones según las opciones que dejan a las demás.
-\end{itemize}
+\subsection{Archivo Prolog}
 
-Se utiliza una sola heurística por ejecución. \texttt{ff} se admite únicamente con \texttt{clpfd} y aplica el mismo criterio que \texttt{mrv} en esta implementación.
+La exportación contiene un hecho \texttt{asignacion/7} por sesión. Sus argumentos son curso, grupo, profesores, aula, día, inicio y duración. Los identificadores aparecen como listas de códigos.
 
-\subsection{Ejemplos}
-
-Los siguientes comandos muestran backtracking con exportación, backtracking con MRV, dominios finitos con \texttt{ff} y optimización con límite:
+El archivo del ejemplo anterior se carga con este comando.
 
 \begin{lstlisting}
-./horarios.sh instances/valid/small.dat output/small.txt bt \
-    --horarios-por-aula --exportar-prolog=output/small.pl
-
-./horarios.sh instances/valid/constraints.dat \
-    output/constraints-mrv.txt bt --heuristica=mrv
-
-./horarios.sh instances/valid/small.dat \
-    output/small-fd.txt clpfd --heuristica=ff
-
-./horarios.sh instances/valid/optimization.dat \
-    output/optimization.txt clpfd \
-    --optimizar --limite=5000000
+gprolog --consult-file horario.pl
 \end{lstlisting}
 
-\section{Ejecución interactiva}
+Dentro del intérprete se consultan las asignaciones.
 
-El programa se carga mediante:
+\begin{lstlisting}
+asignacion(Course, Group, Teachers, Room, Day, Start, Duration).
+\end{lstlisting}
+
+\section{Otras formas de ejecución}
+
+\subsection{Uso interactivo}
+
+El programa se carga en GNU Prolog.
 
 \begin{lstlisting}
 gprolog --consult-file horarios.pl
 \end{lstlisting}
 
-En el intérprete se utiliza \texttt{main/2}, con una lista de argumentos y una variable para recibir el código de terminación. Las opciones se agregan a la lista como átomos:
+En el intérprete, \texttt{main/2} recibe los mismos argumentos en una lista y devuelve el código de salida.
 
 \begin{lstlisting}
-main(['instances/valid/optimization.dat',
-    'output/interactive.txt', clpfd,
-    '--optimizar', '--limite=5000000'], ExitCode).
+main(['instances/valid/small.dat',
+    'salida-interactiva.txt', bt], ExitCode).
 \end{lstlisting}
 
-El intérprete permanece abierto al finalizar la consulta. Para salir se utiliza \texttt{halt.}
+Las opciones también pueden agregarse a esa lista. El intérprete permanece abierto y se cierra con \texttt{halt.}
 
-\section{Ejecución compilada}
-\label{sec:native}
+\Needspace{11\baselineskip}
+\subsection{Programa compilado}
 
-La compilación y la ejecución nativas utilizan:
+La versión compilada se prepara y ejecuta con estos comandos.
 
 \begin{lstlisting}
-gplc --new-top-level -o build/horarios horarios.pl
+gplc --new-top-level -o horarios horarios.pl
 
-./build/horarios --entry-goal main -- \
-    instances/valid/small.dat output/small-native.txt bt
+./horarios --entry-goal main -- \
+    instances/valid/small.dat salida-compilada.txt bt
 \end{lstlisting}
 
-La opción \texttt{--new-top-level} permite reconocer \texttt{--entry-goal}. Los argumentos posteriores a \texttt{--} corresponden a la interfaz de la sección~\ref{sec:arguments}. Si cambia el código fuente, deberá repetirse la compilación.
+Se usan las mismas opciones que con \texttt{horarios.sh}. Si cambia el código, se vuelve a compilar.
 
-\section{Interpretación de los resultados}
+\Needspace{23\baselineskip}
+\section{Pruebas y experimentos}
 
-Los mensajes generados están escritos en inglés. La terminal informa el tamaño estimado del espacio de búsqueda, la cantidad de sesiones requeridas y la ruta del reporte escrito. Los errores se comunican por la salida de error.
-
-\subsection{Reporte de texto}
-
-Cuando existe un horario, el reporte contiene:
-
-\begin{enumerate}
-    \item \textbf{Encabezado}: instancia, estrategia, heurística, estado y fecha.
-    \item \textbf{\texttt{ASSIGNMENT DETAIL}}: una fila por sesión, ordenada por curso, grupo, día y franja inicial, con sus profesores, aula y franjas ocupadas.
-    \item \textbf{Rejillas}: horarios por grupo y profesor. Las celdas libres se representan mediante \texttt{--}.
-    \item \textbf{\texttt{SUMMARY}}: sesiones, franjas ocupadas, huecos, costo, nodos, retrocesos, tiempos de CPU y de pared, y tasa de exploración.
-\end{enumerate}
-
-Sin optimización se entrega el primer horario válido y se calcula su costo. Con optimización, la conclusión \texttt{Optimal schedule. Search finished} indica que se demostró el menor costo al finalizar sin alcanzar el límite. Si la tasa de exploración no puede calcularse porque el tiempo de CPU registrado es cero, se informa \texttt{not calculable}.
-
-En ausencia de un horario, el resumen se sustituye por \texttt{DIAGNOSTIC}. Este bloque informa las sesiones requeridas frente a las franjas disponibles, la mayor carga y la causa demostrada.
-
-\subsection{Estados y códigos de terminación}
-
-\begin{center}
-\begin{tabularx}{\linewidth}{@{}lclX@{}}
-\toprule
-\textbf{Estado} & \textbf{Código} & & \textbf{Significado} \\
-\midrule
-\texttt{SOLUTION FOUND} & 0 & & Se encontró y escribió un horario completo verificado. \\
-\texttt{NO SOLUTION} & 2 & & Se demostró que no existe un horario válido. \\
-\texttt{LIMIT REACHED} & 3 & & Se intentó superar el límite de nodos. Si existe un horario completo, se entrega el mejor encontrado sin garantizar optimalidad; de lo contrario, una solución puede existir. \\
-\texttt{INVALID INSTANCE} & 1 & & Se detectó un error sintáctico o de coherencia y se generó el reporte sin iniciar la búsqueda. \\
-Error en terminal & 1 & & Error de argumentos, lectura o escritura, o inconsistencia por construcción. \\
-\bottomrule
-\end{tabularx}
-\end{center}
-
-El código del proceso se consulta inmediatamente después de su ejecución:
-
-\begin{lstlisting}
-echo $?
-\end{lstlisting}
-
-En los errores de escritura, este código prevalece sobre el resultado previo de la búsqueda. Las inconsistencias por construcción se informan en la terminal y detienen el flujo antes de escribir el reporte normal.
-
-\subsection{Exportación a Prolog}
-
-El archivo adicional declara un hecho \texttt{asignacion/7} por sesión. Sus argumentos son curso, grupo, lista de profesores, aula, día, franja inicial y duración. Los identificadores conservan sus bytes UTF-8 como listas de enteros; por ejemplo, \texttt{C1} se representa como \texttt{[67, 49]}.
-
-La exportación del primer ejemplo puede cargarse y consultarse mediante:
-
-\begin{lstlisting}
-$ gprolog --consult-file output/small.pl
-| ?- asignacion(Course, Group, Teachers, Room, Day, Start, Duration).
-\end{lstlisting}
-
-Los símbolos \texttt{\$} y \texttt{| ?-} representan los indicadores de la terminal y del intérprete; no forman parte de los comandos.
-
-\section{Instancias de prueba}
-
-Los archivos incluidos se encuentran bajo \texttt{instances}:
+Las instancias incluidas están en \texttt{instances}.
 
 \begin{center}
 \begin{tabularx}{\linewidth}{@{}lX@{}}
 \toprule
-\textbf{Archivo relativo a \texttt{instances}} & \textbf{Resultado esperado} \\
+\textbf{Archivo dentro de \texttt{instances}} & \textbf{Resultado esperado} \\
 \midrule
-\path{valid/small.dat} & Dos sesiones, cuatro franjas ocupadas y costo cero; no declara restricciones blandas. \\
-\path{valid/constraints.dat} & Cinco sesiones, ocho franjas ocupadas y costo óptimo cero al optimizar. \\
-\path{valid/optimization.dat} & Costo óptimo 5 al optimizar. \\
-\path{invalid/syntax.dat} & Error de formato en un registro de aula. \\
-\path{invalid/coherence.dat} & Varios errores de coherencia. \\
-\path{unsatisfiable/load.dat} & Carga imposible de grupo y profesor, detectada antes de buscar. \\
-\path{unsatisfiable/rooms.dat} & Ausencia de solución por restricciones implícitas. \\
-\path{unsatisfiable/restrictions.dat} & Ausencia de solución por una declaración de grupos excluyentes. \\
-\path{benchmark/large.dat} & Ochenta sesiones y ciento sesenta franjas ocupadas cuando se encuentra un horario completo. \\
+\path{valid/small.dat} & Dos sesiones y costo cero. \\
+\path{valid/constraints.dat} & Cinco sesiones y costo óptimo cero. \\
+\path{valid/optimization.dat} & Costo óptimo 5. \\
+\path{invalid/syntax.dat} & Error de formato. \\
+\path{invalid/coherence.dat} & Errores en los datos. \\
+\path{unsatisfiable/load.dat} & Carga imposible de grupo y profesor. \\
+\path{unsatisfiable/rooms.dat} & Sin solución por falta de espacio. \\
+\path{unsatisfiable/restrictions.dat} & Sin solución por grupos excluyentes. \\
+\path{benchmark/large.dat} & Ochenta sesiones al encontrar una solución. \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-\section{Reproducción de experimentos}
-
-Las comparaciones deben conservar la instancia, el límite y la configuración de optimización. Cada ejecución utiliza nombres distintos para sus archivos de resultados.
-
-GNU Time permite registrar el tiempo de pared y los tiempos de CPU de usuario y de sistema:
+Los costos óptimos se comprueban con \clioption{optimizar}. Para medir una ejecución también puede usarse GNU Time.
 
 \begin{lstlisting}
-/usr/bin/time -f 'wall=%e user=%U system=%S exit=%x' \
-    -o output/experiments/bt-original.time \
+/usr/bin/time -p -o tiempos.txt \
     ./horarios.sh instances/valid/constraints.dat \
-    output/experiments/bt-original.txt bt \
-    --heuristica=original --limite=50000
+    resultado.txt bt --heuristica=mrv --limite=50000
 \end{lstlisting}
 
-Para comparar heurísticas se cambia \texttt{--heuristica}; para comparar estrategias se cambia \texttt{bt} por \texttt{clpfd}; y para comparar ejecución interpretada y compilada se utiliza la invocación de la sección~\ref{sec:native} dentro del mismo comando de medición.
+Se repite la prueba con otras estrategias, heurísticas y con el programa compilado, manteniendo la misma instancia, el límite y la opción de optimización. El resultado incluye nodos, retrocesos y tiempos. \texttt{tiempos.txt} registra el tiempo del proceso completo.
 
-La ejecución sin restricciones blandas utiliza \texttt{small.dat}. La ejecución optimizada utiliza \texttt{optimization.dat}. El caso de mayor tamaño utiliza \texttt{large.dat}.
-
-El tiempo externo comprende el arranque del proceso y la escritura de archivos. El tiempo del reporte comprende la resolución hasta el final de la búsqueda y, cuando corresponde, las búsquedas adicionales de diagnóstico. Estas últimas no tienen límite de nodos y sus métricas se incluyen en el resultado informado.
-
-\subsection{Variante básica de backtracking}
-
-La selección de variante se encuentra en \path{src/solvers/bt/search.pl}. El hecho actual utiliza \texttt{forward}, correspondiente a verificación anticipada. Para comparar generación y prueba se sustituye ese valor por \texttt{basic}:
+Para comparar con backtracking básico se cambia el hecho de selección en \path{src/solvers/bt/search.pl}.
 
 \begin{lstlisting}
 btSearchVariant(basic).
 \end{lstlisting}
 
-La variante básica conserva los órdenes originales de sesiones y ubicaciones y verifica las restricciones duras al completar la asignación. Debe mantenerse un solo hecho de selección. Al terminar la comparación se restaura \texttt{forward}; la recompilación se realiza conforme a la sección~\ref{sec:native}. Esta selección no dispone de una opción de línea de comandos.
+Esta variante usa el orden original y comprueba las restricciones duras al completar el horario. Al terminar la comparación se restaura \texttt{forward} y se recompila si se usa la versión compilada.
 
-\section{Recursos y solución de errores}
+\section{Si una ejecución falla}
 
-Ante un fallo se revisan el mensaje de la terminal y el diagnóstico, cuando exista. El análisis sintáctico informa el primer registro incorrecto; la validación de coherencia informa conjuntamente los errores encontrados. Un reporte conservado de una ejecución anterior no acredita el resultado actual.
+El mensaje de la terminal o el diagnóstico del archivo indican qué datos revisar. Alcanzar el límite no significa que la instancia no tenga solución.
 
-Las búsquedas grandes, especialmente con MRV o LCV, pueden agotar la pila global. Su tamaño se ajusta mediante \texttt{GLOBALSZ}, expresado en KiB:
+Si una búsqueda grande agota la pila global, se puede aumentar su tamaño. Este ejemplo reserva 256 MiB.
 
 \begin{lstlisting}
 GLOBALSZ=262144 ./horarios.sh instances/benchmark/large.dat \
-    output/large-fd.txt clpfd --heuristica=mrv --limite=50000
+    salida-grande.txt clpfd --heuristica=mrv --limite=50000
 \end{lstlisting}
 
-Este valor establece una pila global de 256 MiB. Debe elegirse según la memoria disponible; aumentarlo no garantiza que una búsqueda extensa termine. El límite de nodos no establece un límite de tiempo ni de memoria.
-
-Los campos numéricos deben utilizar magnitudes representables por GNU Prolog. La versión actual no detecta el desbordamiento durante el parseo decimal.
+El límite de nodos no limita el tiempo ni la memoria de la ejecución.
 
 \end{document}
