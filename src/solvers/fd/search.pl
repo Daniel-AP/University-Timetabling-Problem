@@ -7,11 +7,7 @@ searchFiniteDomains(Config, Model, Maps, Result, Stats) :-
     assertz(fdSearchControl(fdControl(0, none), 0)),
     catch(
         (
-            catch(
-                fdRunSearch(Config, Model, Maps, Stop),
-                fdSearchStop(Stop),
-                true
-            ),
+            catch(fdRunSearch(Config, Model, Maps, Stop), fdSearchStop(Stop), true),
             fdSearchControl(fdControl(Nodes, Best), Backtracks),
             fdSearchResult(Stop, Best, Result),
             finishMeasurement(Nodes, Backtracks, Stats)
@@ -73,8 +69,8 @@ fdTryAssignment(Config, Model, Maps, Session, Slot) :-
 
 fdAssignSession(Session, slot(Room, Day, TupleStart), Model, indexMaps(Rooms, Days)) :-
     member(fdSession(Session, RoomIndex, DayIndex, Start, _), Model),
-    fdIndexValue(Rooms, TupleRoomIndex, Room),
-    fdIndexValue(Days, TupleDayIndex, Day),
+    nth(TupleRoomIndex, Rooms, Room),
+    nth(TupleDayIndex, Days, Day),
     fdAssignDecision(RoomIndex, TupleRoomIndex),
     fdAssignDecision(DayIndex, TupleDayIndex),
     fdAssignDecision(Start, TupleStart).
@@ -122,16 +118,8 @@ fdRecordSchedule(true, Schedule) :-
 %% A relationship between a valid schedule and the best stored schedule
 
 fdSaveSchedule(Schedule) :-
-    fdSearchControl(fdControl(Nodes, none), Backtracks),
     scheduleCost(Schedule, Cost),
-    retract(fdSearchControl(fdControl(Nodes, none), Backtracks)),
-    assertz(fdSearchControl(fdControl(Nodes, best(Schedule, Cost)), Backtracks)).
-
-fdSaveSchedule(Schedule) :-
-    fdSearchControl(fdControl(Nodes, best(_, BestCost)), Backtracks),
-    scheduleCost(Schedule, Cost),
-    Cost < BestCost,
-    retract(fdSearchControl(fdControl(Nodes, best(_, BestCost)), Backtracks)),
+    retract(fdSearchControl(fdControl(Nodes, _), Backtracks)),
     assertz(fdSearchControl(fdControl(Nodes, best(Schedule, Cost)), Backtracks)).
 
 %% A relationship between a search limit and the next counted node

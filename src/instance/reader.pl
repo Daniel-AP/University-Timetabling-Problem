@@ -15,7 +15,7 @@ readInstance(Path, Bytes) :-
         ),
         Cause,
         (
-            close(Stream, [force(true)]),
+            catch(close(Stream, [force(true)]), _, true),
             throw(instanceReadError(Path, Cause))
         )
     ),

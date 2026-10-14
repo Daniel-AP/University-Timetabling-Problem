@@ -14,8 +14,8 @@ fdConstrainRoomGroupAppearances([_], _, _).
 
 fdConstrainRoomGroupAppearances([PreviousRoom, NextRoom|RoomGroup], Model, Maps) :-
     Maps = indexMaps(Rooms, _),
-    fdIndexValue(Rooms, PreviousRoomIndex, PreviousRoom),
-    fdIndexValue(Rooms, NextRoomIndex, NextRoom),
+    nth(PreviousRoomIndex, Rooms, PreviousRoom),
+    nth(NextRoomIndex, Rooms, NextRoom),
     fdConstrainRoomPairAppearances(Model, PreviousRoomIndex, NextRoomIndex, 0),
     fdConstrainRoomGroupAppearances([NextRoom|RoomGroup], Model, Maps).
 

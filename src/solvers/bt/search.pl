@@ -9,13 +9,22 @@ btSearchVariant(forward).
 searchBacktracking(Config, OriginalSessions, Domains, Result, Stats) :-
     retractall(btSearchControl(_, _)),
     assertz(btSearchControl(btControl(0, none), 0)),
-    btSearchVariant(Variant),
-    equivalentRoomGroups(RoomGroups),
-    State = btState(OriginalSessions, []),
-    catch(btRunSearch(Config, Variant, Domains, RoomGroups, OriginalSessions, State, Stop), btSearchStop(Stop), true),
-    btSearchControl(btControl(Nodes, Best), Backtracks),
-    btSearchResult(Stop, Best, Result),
-    finishMeasurement(Nodes, Backtracks, Stats),
+    catch(
+        (
+            btSearchVariant(Variant),
+            equivalentRoomGroups(RoomGroups),
+            State = btState(OriginalSessions, []),
+            catch(btRunSearch(Config, Variant, Domains, RoomGroups, OriginalSessions, State, Stop), btSearchStop(Stop), true),
+            btSearchControl(btControl(Nodes, Best), Backtracks),
+            btSearchResult(Stop, Best, Result),
+            finishMeasurement(Nodes, Backtracks, Stats)
+        ),
+        Error,
+        (
+            retractall(btSearchControl(_, _)),
+            throw(Error)
+        )
+    ),
     retractall(btSearchControl(_, _)).
 
 %% A relationship between an initial branch and search exhaustion
@@ -79,9 +88,9 @@ btIsBranchAllowed(true, _) :-
     btSearchControl(btControl(_, none), _).
 
 btIsBranchAllowed(true, State) :-
-    btSearchControl(btControl(_, best(_, Cost)), _),
+    btSearchControl(btControl(_, best(_, BestCost)), _),
     btCostBound(State, Bound),
-    Bound < Cost.
+    Bound < BestCost.
 
 %% A relationship between optimization and a complete valid schedule
 

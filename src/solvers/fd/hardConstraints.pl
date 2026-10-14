@@ -1,11 +1,7 @@
 %% A relationship between prepared sessions and their hard constraints
 
 fdConstrainSessions([], _) :-
-    findall(
-        [Course, Group, WeeklySessions, Duration],
-        group(Course, Group, _, _, WeeklySessions, Duration, _),
-        Groups
-    ),
+    findall([Course, Group, WeeklySessions, Duration], group(Course, Group, _, _, WeeklySessions, Duration, _), Groups),
     findall([Teacher, MaxSlots], teacher(Teacher, _, MaxSlots, _), TeacherLimits),
     fdConstrainTeacherLoads(TeacherLimits, Groups).
 
@@ -24,8 +20,8 @@ fdConstrainSessionDomains([FdSession|Model], indexMaps(Rooms, Days)) :-
         [TupleRoomIndex, TupleDayIndex, TupleStart],
         (
             member([TupleRoomIndex, TupleDayIndex, TupleStart], Tuples),
-            fdIndexValue(Rooms, TupleRoomIndex, Room),
-            fdIndexValue(Days, TupleDayIndex, Day),
+            nth(TupleRoomIndex, Rooms, Room),
+            nth(TupleDayIndex, Days, Day),
             isAllowedSlot(Course, Group, slot(Room, Day, TupleStart))
         ),
         AllowedTuples

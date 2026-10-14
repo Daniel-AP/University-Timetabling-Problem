@@ -25,8 +25,8 @@ fdOrderSlots(lcv, Session, Slots, Model, Maps, OrderedSlots) :-
         (
             member(Slot, Slots),
             Slot = slot(Room, Day, TupleStart),
-            fdIndexValue(Rooms, TupleRoomIndex, Room),
-            fdIndexValue(Days, TupleDayIndex, Day),
+            nth(TupleRoomIndex, Rooms, Room),
+            nth(TupleDayIndex, Days, Day),
             RoomIndex = TupleRoomIndex,
             DayIndex = TupleDayIndex,
             Start = TupleStart,

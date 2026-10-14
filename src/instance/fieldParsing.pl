@@ -44,7 +44,7 @@ parseDays(Bytes, [Day|Days]) :-
     Day \= ",",
     parseDays([NextByte|RemainingBytes], Days).
 
-%% A relationship between bytes, their first UTF-8 character and the remaining bytes
+%% A relationship between bytes and their first UTF-8 character
 
 takeCharacter([Byte|Bytes], [Byte], Bytes) :-
     Byte >= 0,

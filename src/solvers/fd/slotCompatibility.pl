@@ -10,8 +10,8 @@ fdCompatibleSlots(Session, Model, Maps, ViableSlots) :-
             RoomIndex = TupleRoomIndex,
             DayIndex = TupleDayIndex,
             Start = TupleStart,
-            fdIndexValue(Rooms, TupleRoomIndex, Room),
-            fdIndexValue(Days, TupleDayIndex, Day)
+            nth(TupleRoomIndex, Rooms, Room),
+            nth(TupleDayIndex, Days, Day)
         ),
         ViableSlots
     ).

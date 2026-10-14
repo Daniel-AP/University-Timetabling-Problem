@@ -35,7 +35,7 @@ parseLine([35, 58|Name], _, _, section(Section)) :-
 
 parseLine([35, 58|_], Line, _, _) :-
     !,
-    throw(instanceParseError(Line, "Expected a known section name after #:")).
+    throw(instanceParseError(Line, "Unknown section")).
 
 parseLine([35|_], _, _, skip) :-
     !.
@@ -105,7 +105,7 @@ parseRecord(config, ["duracion_franja", Bytes], _, ["duracion_franja", Duration]
     !.
 
 parseRecord(config, _, Line, _) :-
-    throw(instanceParseError(Line, "Unknown CONFIG key or bad value")).
+    throw(instanceParseError(Line, "Invalid CONFIG record")).
 
 parseRecord(rooms, [Code, CapacityBytes, Type], _, [Code, Capacity, Type]) :-
     Code = [_|_],
@@ -114,7 +114,7 @@ parseRecord(rooms, [Code, CapacityBytes, Type], _, [Code, Capacity, Type]) :-
     !.
 
 parseRecord(rooms, _, Line, _) :-
-    throw(instanceParseError(Line, "Expected a nonempty room code, nonnegative capacity and a known room type")).
+    throw(instanceParseError(Line, "Invalid room record")).
 
 parseRecord(teachers, [Teacher, Name, MaxBytes, AvailabilityBytes], _, [Teacher, Name, MaxSlots, Availability]) :-
     Teacher = [_|_],
@@ -124,7 +124,7 @@ parseRecord(teachers, [Teacher, Name, MaxBytes, AvailabilityBytes], _, [Teacher,
     !.
 
 parseRecord(teachers, _, Line, _) :-
-    throw(instanceParseError(Line, "Expected nonempty teacher code and name, nonnegative maximum and valid availability")).
+    throw(instanceParseError(Line, "Invalid teacher record")).
 
 parseRecord(groups, [Course, Name, Group, EnrolledBytes, WeeklyBytes, DurationBytes, Requirement], _, [Course, Name, Group, Enrolled, WeeklySessions, Duration, Requirement]) :-
     Course = [_|_],
@@ -137,7 +137,7 @@ parseRecord(groups, [Course, Name, Group, EnrolledBytes, WeeklyBytes, DurationBy
     !.
 
 parseRecord(groups, _, Line, _) :-
-    throw(instanceParseError(Line, "Expected seven course fields with nonempty text, nonnegative integers and a known requirement")).
+    throw(instanceParseError(Line, "Invalid course record")).
 
 parseRecord(teaching, [Course, Group, Teacher], _, [Course, Group, Teacher]) :-
     Course = [_|_],
@@ -146,7 +146,7 @@ parseRecord(teaching, [Course, Group, Teacher], _, [Course, Group, Teacher]) :-
     !.
 
 parseRecord(teaching, _, Line, _) :-
-    throw(instanceParseError(Line, "Expected nonempty course, group and teacher codes")).
+    throw(instanceParseError(Line, "Invalid teaching record")).
 
 parseRecord(restrictions, ["aula_fija", Course, Group, Room], _, ["aula_fija", Course, Group, Room]) :-
     Course = [_|_],
@@ -181,4 +181,4 @@ parseRecord(restrictions, ["compacta", Course, Group, WeightBytes], _, ["compact
     !.
 
 parseRecord(restrictions, _, Line, _) :-
-    throw(instanceParseError(Line, "Expected a known restriction type with its nonempty arguments and valid numeric fields")).
+    throw(instanceParseError(Line, "Invalid restriction record")).

@@ -6,8 +6,7 @@ searchSpaceSize(Size) :-
     instanceSetting("dias", Days),
     length(Days, DayCount),
     instanceSetting("franjas", DailySlotCount),
-    findall([WeeklySessions, Duration],
-        group(_, _, _, _, WeeklySessions, Duration, _), Groups),
+    findall([WeeklySessions, Duration], group(_, _, _, _, WeeklySessions, Duration, _), Groups),
     searchSpaceProduct(Groups, RoomCount, DayCount, DailySlotCount, Size).
 
 %% A relationship between group requirements and the number of possible schedules

@@ -8,8 +8,8 @@ fdCostBound(Model, Maps, Bound) :-
         (
             member(fdSession(Session, RoomIndex, DayIndex, Start, _), Model),
             ground([RoomIndex, DayIndex, Start]),
-            fdIndexValue(Rooms, RoomIndex, Room),
-            fdIndexValue(Days, DayIndex, Day),
+            nth(RoomIndex, Rooms, Room),
+            nth(DayIndex, Days, Day),
             sessionAssignment(Session, slot(Room, Day, Start), Assignment)
         ),
         Assignments

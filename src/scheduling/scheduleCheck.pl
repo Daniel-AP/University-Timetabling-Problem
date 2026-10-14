@@ -2,11 +2,7 @@
 
 checkSchedule(Schedule) :-
     checkAssignments(Schedule),
-    findall(
-        [Course, Group, WeeklySessions],
-        group(Course, Group, _, _, WeeklySessions, _, _),
-        Groups
-    ),
+    findall([Course, Group, WeeklySessions], group(Course, Group, _, _, WeeklySessions, _, _), Groups),
     checkGroupSessionCounts(Groups, Schedule),
     checkAssignmentPairs(Schedule),
     findall([Teacher, MaxSlots], teacher(Teacher, _, MaxSlots, _), TeacherLimits),
@@ -54,11 +50,7 @@ checkAssignment(assignment(Course, Group, GivenTeachers, Room, Day, Start, Durat
 checkGroupSessionCounts([], _).
 
 checkGroupSessionCounts([[Course, Group, WeeklySessions]|Groups], Schedule) :-
-    findall(
-        1,
-        member(assignment(Course, Group, _, _, _, _, _), Schedule),
-        Matches
-    ),
+    findall(1, member(assignment(Course, Group, _, _, _, _, _), Schedule), Matches),
     length(Matches, WeeklySessions),
     checkGroupSessionCounts(Groups, Schedule).
 

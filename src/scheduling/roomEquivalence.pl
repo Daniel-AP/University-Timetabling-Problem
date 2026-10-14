@@ -1,10 +1,14 @@
 %% A relationship between instance rooms and their equivalent groups
 
 equivalentRoomGroups(Groups) :-
-    findall(room(Room, Capacity, Type), (
+    findall(
         room(Room, Capacity, Type),
-        \+ fixedRoom(_, _, Room)
-    ), Rooms),
+        (
+            room(Room, Capacity, Type),
+            \+ fixedRoom(_, _, Room)
+        ),
+        Rooms
+    ),
     buildEquivalentRoomGroups(Rooms, Groups).
 
 %% A relationship between rooms and groups with the same capacity and type

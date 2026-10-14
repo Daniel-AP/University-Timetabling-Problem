@@ -1,11 +1,7 @@
-%% A relationship between instance facts and errors that prevent a solution
+%% A relationship between instance facts and scheduling errors
 
 instanceInconsistencies(Errors) :-
-    findall(
-        [Course, Group, WeeklySessions, Duration],
-        group(Course, Group, _, _, WeeklySessions, Duration, _),
-        Groups
-    ),
+    findall([Course, Group, WeeklySessions, Duration], group(Course, Group, _, _, WeeklySessions, Duration, _), Groups),
     findall(
         Message,
         (
@@ -24,7 +20,7 @@ instanceInconsistencies(Errors) :-
     ),
     append(GroupErrors, TeacherErrors, Errors).
 
-%% A relationship between a group and an error that prevents a solution
+%% A relationship between a group and its scheduling errors
 
 groupInconsistency(Course, Group, Message) :-
     group(Course, Group, _, Enrolled, WeeklySessions, _, Requirement),
@@ -33,7 +29,7 @@ groupInconsistency(Course, Group, Message) :-
     append("Group ", Course, Message1),
     append(Message1, "/", Message2),
     append(Message2, Group, Message3),
-    append(Message3, ": No room with the required type and capacity", Message).
+    append(Message3, ": No suitable room", Message).
 
 groupInconsistency(Course, Group, Message) :-
     group(Course, Group, _, Enrolled, WeeklySessions, _, Requirement),
@@ -60,10 +56,11 @@ groupInconsistency(Course, Group, Message) :-
     append("Group ", Course, Message1),
     append(Message1, "/", Message2),
     append(Message2, Group, Message3),
-    append(Message3, ": Required sessions ", Message4),
+    append(Message3, ": Needs ", Message4),
     append(Message4, WeeklyDigits, Message5),
-    append(Message5, " exceed the number that fit ", Message6),
-    append(Message6, MaxDigits, Message).
+    append(Message5, " sessions, only ", Message6),
+    append(Message6, MaxDigits, Message7),
+    append(Message7, " fit", Message).
 
 %% A relationship between group requirements and a suitable room
 
@@ -87,7 +84,7 @@ groupAllowedSlots(Course, Group, Slots) :-
         Slots
     ).
 
-%% A relationship between session starts and the maximum number of sessions that fit
+%% A relationship between session starts and available session capacity
 
 groupSessionCapacity([], _, 0).
 
@@ -107,7 +104,7 @@ groupSessionCapacity([daySlot(Day, Start)|Times], Duration, SessionCapacity) :-
     groupSessionCapacity(RemainingTimes, Duration, RestCapacity),
     SessionCapacity is RestCapacity+1.
 
-%% A relationship between a teacher and an error that prevents a solution
+%% A relationship between a teacher and their scheduling errors
 
 teacherInconsistency(Teacher, Groups, Message) :-
     teacher(Teacher, _, MaxSlots, _),
@@ -116,9 +113,9 @@ teacherInconsistency(Teacher, Groups, Message) :-
     number_codes(RequiredSlots, RequiredDigits),
     number_codes(MaxSlots, MaxDigits),
     append("Teacher ", Teacher, Message1),
-    append(Message1, ": Required slots ", Message2),
+    append(Message1, ": Needs ", Message2),
     append(Message2, RequiredDigits, Message3),
-    append(Message3, " exceed the weekly limit ", Message4),
+    append(Message3, " slots, limit ", Message4),
     append(Message4, MaxDigits, Message).
 
 teacherInconsistency(Teacher, Groups, Message) :-
@@ -128,10 +125,11 @@ teacherInconsistency(Teacher, Groups, Message) :-
     number_codes(RequiredSlots, RequiredDigits),
     number_codes(Coverage, CoverageDigits),
     append("Teacher ", Teacher, Message1),
-    append(Message1, ": Required slots ", Message2),
+    append(Message1, ": Needs ", Message2),
     append(Message2, RequiredDigits, Message3),
-    append(Message3, " exceed possible slots after applying room, availability and group restrictions: ", Message4),
-    append(Message4, CoverageDigits, Message).
+    append(Message3, " slots, only ", Message4),
+    append(Message4, CoverageDigits, Message5),
+    append(Message5, " available", Message).
 
 %% A relationship between a teacher and a group they teach
 

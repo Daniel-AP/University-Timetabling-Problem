@@ -1,4 +1,4 @@
-%% A relationship between an instance search, its result and measurements
+%% A relationship between an instance search and its results
 
 searchInstance(Config, Result, Stats, []) :-
     Config = config(_, _, bt, _, _, _),
@@ -8,7 +8,7 @@ searchInstance(Config, Result, Stats, []) :-
 
 searchInstance(Config, Result, Stats, []) :-
     Config = config(_, _, clpfd, _, _, _),
-    fdPrepareModel(Model, _Variables, Maps),
+    fdPrepareModel(Model, Maps),
     fdConstrainSessions(Model, Maps),
     fdConstrainSessionOrder(Model),
     equivalentRoomGroups(RoomGroups),
@@ -16,5 +16,5 @@ searchInstance(Config, Result, Stats, []) :-
     !,
     searchFiniteDomains(Config, Model, Maps, Result, Stats).
 
-searchInstance(config(_, _, clpfd, _, _, _), result(noSolution, none), Stats, ["Finite domain constraints are inconsistent before search"]) :-
+searchInstance(config(_, _, clpfd, _, _, _), result(noSolution, none), Stats, ["Inconsistent finite domain constraints"]) :-
     finishMeasurement(0, 0, Stats).

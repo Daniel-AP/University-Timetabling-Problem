@@ -5,7 +5,7 @@ main :-
     main(Arguments, ExitCode),
     halt(ExitCode).
 
-%% A relationship between execution arguments and their termination code
+%% A relationship between arguments and the exit code
 
 main(Arguments, ExitCode) :-
     catch(
@@ -21,15 +21,13 @@ main(Arguments, ExitCode) :-
     ),
     !,
     clearInstance,
-    retractall(btSearchControl(_, _)),
     ExitCode = RunExitCode.
 
 main(_, 1) :-
     clearInstance,
-    retractall(btSearchControl(_, _)),
-    format(user_error, "Could not complete execution~n", []).
+    format(user_error, "Execution failed~n", []).
 
-%% A relationship between execution settings and their complete output
+%% A relationship between execution settings and their output
 
 runExecution(Config, executionOptions(PrologOutput, IsRoomGridEnabled), ExitCode) :-
     Config = config(Input, Output, _, _, _, _),
@@ -61,7 +59,7 @@ runExecution(Config, executionOptions(PrologOutput, IsRoomGridEnabled), ExitCode
     writeResultSchedule(PrologOutput, Result),
     format("Report written: ~a~n", [Output]).
 
-%% A relationship between detected instance errors and execution interruption
+%% A relationship between instance errors and execution failure
 
 checkInstanceErrors(_, []).
 
@@ -69,7 +67,7 @@ checkInstanceErrors(Input, [Error|Errors]) :-
     finishMeasurement(0, 0, Stats),
     throw(instanceErrors(Input, [Error|Errors], Stats)).
 
-%% A relationship between invalid instance errors and their written report
+%% A relationship between instance errors and their report
 
 writeInvalidInstanceReport(Config, instanceParseError(Line, Cause)) :-
     Config = config(Input, _, _, _, _, _),
@@ -111,7 +109,7 @@ prepareResultData(result(noSolution, none), SearchDiagnostic, TotalSessions, una
 prepareResultData(result(limitReached, none), SearchDiagnostic, TotalSessions, unavailable, Diagnostic, 3) :-
     prepareDiagnostic(TotalSessions, SearchDiagnostic, Diagnostic).
 
-%% A relationship between instance measures and available diagnostic lines
+%% A relationship between instance data and diagnostic lines
 
 prepareDiagnostic(TotalSessions, SearchDiagnostic, Diagnostic) :-
     instanceSetting("dias", Days),
@@ -149,7 +147,7 @@ prepareDiagnostic(TotalSessions, SearchDiagnostic, Diagnostic) :-
     append("Weekly room slots: ", RoomSlotDigits, RoomSlotLine),
     append([SessionLine, SlotLine, RoomSlotLine, LoadLine], SearchDiagnostic, Diagnostic).
 
-%% A relationship between required resource loads and the greatest one
+%% A relationship between resource loads and the largest load
 
 greatestRequiredLoad([], Greatest, Greatest).
 
@@ -165,13 +163,13 @@ greatestRequiredLoad([Resource-RequiredSlots|RequiredLoads], _-GreatestSlots, Gr
 greatestRequiredLoad([_|RequiredLoads], CurrentGreatest, Greatest) :-
     greatestRequiredLoad(RequiredLoads, CurrentGreatest, Greatest).
 
-%% A relationship between the greatest required load and its diagnostic text
+%% A relationship between the largest load and its message
 
-diagnosticLoadLine(none, "Largest required weekly load: no groups or teachers").
+diagnosticLoadLine(none, "No groups or teachers").
 
 diagnosticLoadLine(groupKey(Course, Group)-RequiredSlots, Line) :-
     number_codes(RequiredSlots, Digits),
-    append("Largest required weekly load: group ", Course, Line1),
+    append("Largest weekly load: group ", Course, Line1),
     append(Line1, "/", Line2),
     append(Line2, Group, Line3),
     append(Line3, ", ", Line4),
@@ -180,18 +178,18 @@ diagnosticLoadLine(groupKey(Course, Group)-RequiredSlots, Line) :-
 
 diagnosticLoadLine(teacher(Teacher)-RequiredSlots, Line) :-
     number_codes(RequiredSlots, Digits),
-    append("Largest required weekly load: teacher ", Teacher, Line1),
+    append("Largest weekly load: teacher ", Teacher, Line1),
     append(Line1, ", ", Line2),
     append(Line2, Digits, Line3),
     append(Line3, " slots", Line).
 
-%% A relationship between a proven scheduling cause and diagnostic lines
+%% A relationship between failure causes and diagnostic lines
 
 diagnosticCauseLines(none, []).
 
-diagnosticCauseLines(implicitConstraints, ["The implicit hard constraints have no complete schedule", "No declared restriction is needed to prove this conflict", "Diagnostic searches have no node limit", "Measurements include diagnostic searches"]).
+diagnosticCauseLines(implicitConstraints, ["No solution under implicit constraints"]).
 
-diagnosticCauseLines(blockingRestriction(record(Line, ["aula_fija", Course, Group, Room])), [LineText, RestrictionText, "Impact: removes all schedules allowed by earlier declarations", "Diagnostic searches have no node limit", "Measurements include diagnostic searches"]) :-
+diagnosticCauseLines(blockingRestriction(record(Line, ["aula_fija", Course, Group, Room])), [LineText, RestrictionText]) :-
     number_codes(Line, LineDigits),
     append("First blocking declared restriction: line ", LineDigits, LineText),
     append("Fixed room: ", Course, Text1),
@@ -200,7 +198,7 @@ diagnosticCauseLines(blockingRestriction(record(Line, ["aula_fija", Course, Grou
     append(Text3, " in ", Text4),
     append(Text4, Room, RestrictionText).
 
-diagnosticCauseLines(blockingRestriction(record(Line, ["prohibida", Course, Group, daySlot(Day, Slot)])), [LineText, RestrictionText, "Impact: removes all schedules allowed by earlier declarations", "Diagnostic searches have no node limit", "Measurements include diagnostic searches"]) :-
+diagnosticCauseLines(blockingRestriction(record(Line, ["prohibida", Course, Group, daySlot(Day, Slot)])), [LineText, RestrictionText]) :-
     number_codes(Line, LineDigits),
     number_codes(Slot, SlotDigits),
     append("First blocking declared restriction: line ", LineDigits, LineText),
@@ -211,7 +209,7 @@ diagnosticCauseLines(blockingRestriction(record(Line, ["prohibida", Course, Grou
     append(Text4, Day, Text5),
     append(Text5, SlotDigits, RestrictionText).
 
-diagnosticCauseLines(blockingRestriction(record(Line, ["excluyentes", Course, Group, OtherCourse, OtherGroup])), [LineText, RestrictionText, "Impact: removes all schedules allowed by earlier declarations", "Diagnostic searches have no node limit", "Measurements include diagnostic searches"]) :-
+diagnosticCauseLines(blockingRestriction(record(Line, ["excluyentes", Course, Group, OtherCourse, OtherGroup])), [LineText, RestrictionText]) :-
     number_codes(Line, LineDigits),
     append("First blocking declared restriction: line ", LineDigits, LineText),
     append("Exclusive groups: ", Course, Text1),
@@ -246,7 +244,7 @@ writeResultSchedule(none, _) :-
     !.
 
 writeResultSchedule(prologFile(PrologPath), result(_, none)) :-
-    format("No complete schedule to export: ~a~n", [PrologPath]).
+    format("No schedule to export: ~a~n", [PrologPath]).
 
 writeResultSchedule(prologFile(PrologPath), result(_, schedule(Schedule))) :-
     writeSchedule(PrologPath, Schedule).
@@ -255,49 +253,42 @@ writeResultSchedule(prologFile(PrologPath), result(_, schedule(Schedule))) :-
 
 writeExecutionError(_, argumentError(Argument, Cause)) :-
     !,
-    format(user_error, "Argument ~w: ", [Argument]),
+    format(user_error, "~w: ", [Argument]),
     writeExecutionCause(Cause),
     nl(user_error),
-    format(user_error, "Usage: horarios.sh INPUT OUTPUT bt|clpfd [OPTIONS]~n", []),
-    format(user_error, "Options: --optimizar --heuristica=original|mrv|degree|demand|lcv|ff --limite=N~n", []),
-    format(user_error, "         --exportar-prolog=PATH --horarios-por-aula~nff requires clpfd~n", []).
+    format(user_error, "Usage: horarios.sh INPUT OUTPUT bt|clpfd [OPTIONS]~n", []).
 
 writeExecutionError(_, instanceReadError(Path, Cause)) :-
     !,
-    finishMeasurement(0, 0, Stats),
-    format(user_error, "Could not read ~a: ", [Path]),
+    format(user_error, "Cannot read ~a: ", [Path]),
     writeExecutionCause(Cause),
-    nl(user_error),
-    writeReportStats(user_error, Stats).
+    nl(user_error).
 
 writeExecutionError([Input|_], instanceParseError(Line, Cause)) :-
     !,
-    finishMeasurement(0, 0, Stats),
-    format(user_error, "Input ~a, line ~d: ", [Input, Line]),
+    format(user_error, "~a, line ~d: ", [Input, Line]),
     writeExecutionCause(Cause),
-    nl(user_error),
-    writeReportStats(user_error, Stats).
+    nl(user_error).
 
-writeExecutionError(_, instanceErrors(Input, Errors, Stats)) :-
+writeExecutionError(_, instanceErrors(Input, Errors, _)) :-
     !,
-    format(user_error, "Instance errors in ~a~n", [Input]),
-    writeReportDiagnostic(user_error, Errors),
-    writeReportStats(user_error, Stats).
+    format(user_error, "Errors in ~a~n", [Input]),
+    writeReportDiagnostic(user_error, Errors).
 
 writeExecutionError(_, reportWriteError(Path, Cause)) :-
     !,
-    format(user_error, "Could not write report ~a: ", [Path]),
+    format(user_error, "Cannot write ~a: ", [Path]),
     writeExecutionCause(Cause),
     nl(user_error).
 
 writeExecutionError(_, scheduleWriteError(Path, Cause)) :-
     !,
-    format(user_error, "Could not write schedule ~a: ", [Path]),
+    format(user_error, "Cannot write ~a: ", [Path]),
     writeExecutionCause(Cause),
     nl(user_error).
 
 writeExecutionError([Input|_], Error) :-
-    format(user_error, "Execution error in ~a: ", [Input]),
+    format(user_error, "Error in ~a: ", [Input]),
     writeExecutionCause(Error),
     nl(user_error).
 

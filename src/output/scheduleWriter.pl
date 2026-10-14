@@ -26,7 +26,7 @@ writeScheduleStream(Path, Stream, Schedule, ExpectedBytes) :-
 
 writeScheduleStream(Path, Stream, _, _) :-
     catch(close(Stream, [force(true)]), _, true),
-    throw(scheduleWriteError(Path, "Could not write schedule")).
+    throw(scheduleWriteError(Path, "Write failed")).
 
 %% A relationship between a written file and its expected size
 

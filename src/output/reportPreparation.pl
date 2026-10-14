@@ -29,17 +29,17 @@ prepareReport(Config, result(Status, none), _, Stats, _, Diagnostic, _, Date, Re
 
 %% A relationship between a search result and its report state
 
-reportState(false, result(found, schedule(_)), "SOLUTION FOUND", "First valid schedule. Best cost not proved").
+reportState(false, result(found, schedule(_)), "SOLUTION FOUND", "First valid schedule").
 
-reportState(true, result(found, schedule(_)), "SOLUTION FOUND", "Optimal schedule. Search finished").
+reportState(true, result(found, schedule(_)), "SOLUTION FOUND", "Optimal schedule").
 
-reportState(_, result(noSolution, none), "NO SOLUTION", "No solution. Resolution finished").
+reportState(_, result(noSolution, none), "NO SOLUTION", "No solution").
 
-reportState(_, result(invalidInstance, none), "INVALID INSTANCE", "Invalid instance. Search not started").
+reportState(_, result(invalidInstance, none), "INVALID INSTANCE", "Invalid instance").
 
-reportState(_, result(limitReached, schedule(_)), "LIMIT REACHED", "Limit reached. Best schedule found. Best cost not proved").
+reportState(_, result(limitReached, schedule(_)), "LIMIT REACHED", "Best schedule found. Optimality not proved").
 
-reportState(_, result(limitReached, none), "LIMIT REACHED", "Limit reached. No schedule found. A solution may exist").
+reportState(_, result(limitReached, none), "LIMIT REACHED", "No schedule found. Search incomplete").
 
 %% A relationship between search statistics and a report node rate
 
@@ -56,21 +56,9 @@ reportNodeRate(Stats, NodeRate) :-
 %% A relationship between instance records and report resources
 
 reportResources(instance(_, Rooms, Teachers, Groups, _, _), GroupResources, TeacherResources, RoomResources) :-
-    findall(
-        groupKey(Course, Group),
-        member(record(_, [Course, _, Group, _, _, _, _]), Groups),
-        GroupResources
-    ),
-    findall(
-        teacher(Teacher),
-        member(record(_, [Teacher, _, _, _]), Teachers),
-        TeacherResources
-    ),
-    findall(
-        room(Room),
-        member(record(_, [Room, _, _]), Rooms),
-        RoomResources
-    ).
+    findall(groupKey(Course, Group), member(record(_, [Course, _, Group, _, _, _, _]), Groups), GroupResources),
+    findall(teacher(Teacher), member(record(_, [Teacher, _, _, _]), Teachers), TeacherResources),
+    findall(room(Room), member(record(_, [Room, _, _]), Rooms), RoomResources).
 
 %% A relationship between a schedule and its ordered detail
 

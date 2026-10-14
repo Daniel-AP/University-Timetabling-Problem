@@ -88,7 +88,7 @@ validateRequiredSettings([Key|Keys], Settings, Errors) :-
     validateRequiredSettings(Keys, Settings, Errors).
 
 validateRequiredSettings([Key|Keys], Settings, [Message|Errors]) :-
-    append("CONFIG: Missing required key ", Key, Message),
+    append("CONFIG: Missing key ", Key, Message),
     validateRequiredSettings(Keys, Settings, Errors).
 
 %% A relationship between a start time and its errors
@@ -182,40 +182,32 @@ validateDuplicate(config, Key, Line, Records, [Message]) :-
     FirstLine < Line,
     !,
     number_codes(Line, LineDigits),
-    number_codes(FirstLine, FirstLineDigits),
     append("Line ", LineDigits, Message1),
-    append(Message1, ": Duplicate CONFIG key, first on line ", Message2),
-    append(Message2, FirstLineDigits, Message).
+    append(Message1, ": Duplicate CONFIG key", Message).
 
 validateDuplicate(rooms, Code, Line, Records, [Message]) :-
     findRecord(rooms, Code, Records, record(FirstLine, _)),
     FirstLine < Line,
     !,
     number_codes(Line, LineDigits),
-    number_codes(FirstLine, FirstLineDigits),
     append("Line ", LineDigits, Message1),
-    append(Message1, ": Duplicate room code, first on line ", Message2),
-    append(Message2, FirstLineDigits, Message).
+    append(Message1, ": Duplicate room code", Message).
 
 validateDuplicate(teachers, Teacher, Line, Records, [Message]) :-
     findRecord(teachers, Teacher, Records, record(FirstLine, _)),
     FirstLine < Line,
     !,
     number_codes(Line, LineDigits),
-    number_codes(FirstLine, FirstLineDigits),
     append("Line ", LineDigits, Message1),
-    append(Message1, ": Duplicate teacher code, first on line ", Message2),
-    append(Message2, FirstLineDigits, Message).
+    append(Message1, ": Duplicate teacher code", Message).
 
 validateDuplicate(groups, Key, Line, Records, [Message]) :-
     findRecord(groups, Key, Records, record(FirstLine, _)),
     FirstLine < Line,
     !,
     number_codes(Line, LineDigits),
-    number_codes(FirstLine, FirstLineDigits),
     append("Line ", LineDigits, Message1),
-    append(Message1, ": Duplicate course-group pair, first on line ", Message2),
-    append(Message2, FirstLineDigits, Message).
+    append(Message1, ": Duplicate course-group pair", Message).
 
 validateDuplicate(_, _, _, _, []).
 
@@ -268,7 +260,7 @@ validateSlot(Slot, Line, _, _, [Message]) :-
     !,
     number_codes(Line, LineDigits),
     append("Line ", LineDigits, Message1),
-    append(Message1, ": Slot must be at least 1", Message).
+    append(Message1, ": Slot below 1", Message).
 
 validateSlot(_, _, _, false, []) :-
     !.
@@ -317,14 +309,14 @@ validateRangeOrder(dayRange(daySlot(StartDay, _), daySlot(EndDay, _)), Line, [Me
     !,
     number_codes(Line, LineDigits),
     append("Line ", LineDigits, Message1),
-    append(Message1, ": Availability range must stay in one day", Message).
+    append(Message1, ": Availability range crosses days", Message).
 
 validateRangeOrder(dayRange(daySlot(Day, StartSlot), daySlot(Day, EndSlot)), Line, [Message]) :-
     StartSlot > EndSlot,
     !,
     number_codes(Line, LineDigits),
     append("Line ", LineDigits, Message1),
-    append(Message1, ": Availability range starts after it ends", Message).
+    append(Message1, ": Reversed availability range", Message).
 
 validateRangeOrder(dayRange(daySlot(Day, StartSlot), daySlot(Day, EndSlot)), _, []) :-
     StartSlot =< EndSlot.
@@ -342,7 +334,7 @@ validateDuration(Duration, _, Settings, true, []) :-
 validateDuration(_, Line, _, true, [Message]) :-
     number_codes(Line, LineDigits),
     append("Line ", LineDigits, Message1),
-    append(Message1, ": Group duration exceeds the daily limit", Message).
+    append(Message1, ": Session duration exceeds the day", Message).
 
 %% A relationship between a group and its teacher
 

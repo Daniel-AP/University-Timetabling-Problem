@@ -24,7 +24,7 @@ writeReportStream(Path, Stream, Report, ExpectedBytes) :-
 
 writeReportStream(Path, Stream, _, _) :-
     catch(close(Stream, [force(true)]), _, true),
-    throw(reportWriteError(Path, "Could not write report")).
+    throw(reportWriteError(Path, "Write failed")).
 
 %% A relationship between a written file and its expected size
 
@@ -150,7 +150,7 @@ writeReportCells(Stream, [groupKey(Course, Group)|Cells]) :-
     format(Stream, " | ~s/~s", [Course, Group]),
     writeReportCells(Stream, Cells).
 
-%% A relationship between a report conclusion and its written summary or diagnostic
+%% A relationship between a conclusion and its written output
 
 writeReportConclusion(Stream, summary(SessionCount, SessionSlotCount, GroupGaps, TeacherGaps, Cost, Stats, NodeRate, FinalText)) :-
     format(Stream, "~n----------------------------------------------------------------~nSUMMARY~n", []),
@@ -169,7 +169,7 @@ writeReportConclusion(Stream, diagnosticBlock(FinalText, Diagnostic, Stats, Node
 %% A relationship between diagnostic lines and their written information
 
 writeReportDiagnostic(Stream, []) :-
-    format(Stream, "Diagnostic information: unavailable~n", []).
+    format(Stream, "No diagnostic~n", []).
 
 writeReportDiagnostic(Stream, [Line]) :-
     !,

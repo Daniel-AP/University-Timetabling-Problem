@@ -1,6 +1,6 @@
 %% A relationship between instance facts and their finite domain model
 
-fdPrepareModel(Model, Variables, Maps) :-
+fdPrepareModel(Model, Maps) :-
     findall(Room, room(Room, _, _), Rooms),
     instanceSetting("dias", Days),
     length(Rooms, RoomCount),
@@ -11,13 +11,13 @@ fdPrepareModel(Model, Variables, Maps) :-
     fd_set_vector_max(RequiredVectorMax),
     Maps = indexMaps(Rooms, Days),
     sessions(Sessions),
-    fdPrepareSessions(Sessions, Maps, Model, Variables).
+    fdPrepareSessions(Sessions, Maps, Model).
 
-%% A relationship between sessions and their finite domain variables
+%% A relationship between sessions and their finite domain model
 
-fdPrepareSessions([], _, [], []).
+fdPrepareSessions([], _, []).
 
-fdPrepareSessions([Session|Sessions], Maps, [fdSession(Session, RoomIndex, DayIndex, Start, Tuples)|Model], [RoomIndex, DayIndex, Start|Variables]) :-
+fdPrepareSessions([Session|Sessions], Maps, [fdSession(Session, RoomIndex, DayIndex, Start, Tuples)|Model]) :-
     Session = session(Course, Group, _),
     Maps = indexMaps(Rooms, Days),
     group(Course, Group, _, _, _, Duration, _),
@@ -31,16 +31,11 @@ fdPrepareSessions([Session|Sessions], Maps, [fdSession(Session, RoomIndex, DayIn
     fd_domain(DayIndex, 1, DayCount),
     fd_domain(Start, 1, LastStart),
     fd_relation(Tuples, [RoomIndex, DayIndex, Start]),
-    fdPrepareSessions(Sessions, Maps, Model, Variables).
+    fdPrepareSessions(Sessions, Maps, Model).
 
 %% A relationship between a session and its indexed locations
 
 fdIndexedSlot(Session, indexMaps(Rooms, Days), [RoomIndex, DayIndex, Start]) :-
     possibleSlot(Session, slot(Room, Day, Start)),
-    fdIndexValue(Rooms, RoomIndex, Room),
-    fdIndexValue(Days, DayIndex, Day).
-
-%% A relationship between an identifier list and an indexed identifier
-
-fdIndexValue(Values, Index, Value) :-
-    nth(Index, Values, Value).
+    nth(RoomIndex, Rooms, Room),
+    nth(DayIndex, Days, Day).
